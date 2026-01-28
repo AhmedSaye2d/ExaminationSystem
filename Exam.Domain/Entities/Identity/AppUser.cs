@@ -14,7 +14,7 @@ namespace Exam.Domain.Entities.Identity
 
         public UserType UserType { get; set; }   // 👈 هنا
 
-        public ICollection<RefreshToken> RefreshTokens { get; set; }
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = [];
     }
 
 }

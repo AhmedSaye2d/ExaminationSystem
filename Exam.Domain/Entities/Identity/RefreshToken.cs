@@ -13,6 +13,6 @@ namespace Exam.Domain.Entities.Identity
         public bool IsRevoked { get; set; }
 
         public string UserId { get; set; } = string.Empty;
-        public AppUser User { get; set; }
+        public AppUser User { get; set; } = null!;
     }
 }

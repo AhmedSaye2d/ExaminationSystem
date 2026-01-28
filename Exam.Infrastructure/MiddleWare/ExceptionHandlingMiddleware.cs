@@ -24,12 +24,12 @@ namespace Exam.Infrastructure.Middleware
             {
                 await HandleDbExceptionAsync(context, ex);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 context.Response.ContentType = "application/json";
 
-                await WriteError(context, "Unexpected error occurred");
+                await WriteError(context, $"Unexpected error occurred: {ex.Message}");
             }
         }
 

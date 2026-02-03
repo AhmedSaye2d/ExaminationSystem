@@ -4,6 +4,8 @@ using Exam.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Exam.Infrastructure.Repository.Authentication
 {
@@ -23,7 +25,6 @@ namespace Exam.Infrastructure.Repository.Authentication
             _context = context;
         }
 
-        // ✅ Register
         public async Task<bool> CreateUser(AppUser user, string password)
         {
             var exists = await _userManager.FindByEmailAsync(user.Email!);
@@ -35,14 +36,12 @@ namespace Exam.Infrastructure.Repository.Authentication
             if (!result.Succeeded)
                 return false;
 
-            // optional: add role
             var roleName = user.UserType.ToString();
             await _userManager.AddToRoleAsync(user, roleName);
 
             return true;
         }
 
-        // ✅ Password check (Login)
         public async Task<bool> CheckPassword(AppUser user, string password)
         {
             return await _userManager.CheckPasswordAsync(user, password);
@@ -66,10 +65,9 @@ namespace Exam.Infrastructure.Repository.Authentication
             return result.Succeeded;
         }
 
-        // ✅ Claims
         public async Task<List<Claim>> GetUserClaim(string email)
         {
-            var user = await GetUserByEmail(email);
+            var user = await _userManager.FindByEmailAsync(email);
             if (user == null) return new();
 
             var roleName = await _roleManagement.GetUserRole(user.Email!);

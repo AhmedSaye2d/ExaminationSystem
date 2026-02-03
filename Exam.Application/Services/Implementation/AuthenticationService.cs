@@ -5,6 +5,8 @@ using Exam.Application.Services.Interfaces.Authentication;
 using Exam.Domain.Entities.Identity;
 using Exam.Domain.Interface.Authentication;
 using FluentValidation;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Exam.Application.Services.Implementation
 {
@@ -31,15 +33,15 @@ namespace Exam.Application.Services.Implementation
         }
 
         // ✅ Register
-        public async Task<ServiceResponse> CreateUser(CreateUser user)
+        public async Task<ServiceResponse> CreateUser(CreateUser userDto)
         {
-            var validation = await _createUserValidator.ValidateAsync(user);
+            var validation = await _createUserValidator.ValidateAsync(userDto);
             if (!validation.IsValid)
                 return ServiceResponse.Fail(validation.Errors.First().ErrorMessage);
 
-            var appUser = _mapper.Map<AppUser>(user);
+            var appUser = _mapper.Map<AppUser>(userDto);
 
-            bool created = await _userManagement.CreateUser(appUser, user.Password);
+            bool created = await _userManagement.CreateUser(appUser, userDto.Password);
             if (!created)
                 return ServiceResponse.Fail("User already exists");
 
@@ -47,18 +49,18 @@ namespace Exam.Application.Services.Implementation
         }
 
         // ✅ Login
-        public async Task<LoginResponse> LoginUser(Login user)
+        public async Task<LoginResponse> LoginUser(Login loginDto)
         {
-            var validation = await _loginValidator.ValidateAsync(user);
+            var validation = await _loginValidator.ValidateAsync(loginDto);
             if (!validation.IsValid)
                 return new LoginResponse(false, validation.Errors.First().ErrorMessage);
 
-            var appUser = await _userManagement.GetUserByEmail(user.Email);
+            var appUser = await _userManagement.GetUserByEmail(loginDto.Email);
             if (appUser == null)
                 return new LoginResponse(false, "Invalid email or password");
 
             bool validPassword =
-                await _userManagement.CheckPassword(appUser, user.Password);
+                await _userManagement.CheckPassword(appUser, loginDto.Password);
 
             if (!validPassword)
                 return new LoginResponse(false, "Invalid email or password");
@@ -84,16 +86,16 @@ namespace Exam.Application.Services.Implementation
             if (string.IsNullOrEmpty(userId))
                 return new LoginResponse(false, "User not found");
 
-            var user = await _userManagement.GetUserById(userId);
-            if (user == null)
+            var appUser = await _userManagement.GetUserById(userId);
+            if (appUser == null)
                 return new LoginResponse(false, "User not found");
 
-            var claims = await _userManagement.GetUserClaim(user.Email!);
+            var claims = await _userManagement.GetUserClaim(appUser.Email!);
 
             string newToken = _tokenManagement.GenerateToken(claims);
             string newRefreshToken = _tokenManagement.GetRefreshToken();
 
-            await _tokenManagement.UpdateRefreshToken(user.Id, newRefreshToken);
+            await _tokenManagement.UpdateRefreshToken(appUser.Id, newRefreshToken);
 
             return new LoginResponse(true, "Token refreshed", newToken, newRefreshToken);
         }

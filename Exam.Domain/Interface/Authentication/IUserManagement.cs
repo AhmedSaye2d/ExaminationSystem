@@ -1,5 +1,7 @@
 ﻿using System.Security.Claims;
 using Exam.Domain.Entities.Identity;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Exam.Domain.Interface.Authentication
 {

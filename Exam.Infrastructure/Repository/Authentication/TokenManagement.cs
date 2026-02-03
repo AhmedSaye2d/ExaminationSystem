@@ -115,5 +115,3 @@ namespace Exam.Infrastructure.Repository.Authentication
         }
     }
 }
-
-

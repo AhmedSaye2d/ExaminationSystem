@@ -2,6 +2,8 @@ using Exam.Domain.Entities.Identity;
 using Exam.Domain.Enum;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Threading.Tasks;
 
 namespace Exam.Infrastructure.Data
 {

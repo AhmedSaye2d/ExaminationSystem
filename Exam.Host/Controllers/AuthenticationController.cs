@@ -17,7 +17,6 @@ namespace Exam.API.Controllers
             _authenticationService = authenticationService;
         }
 
-        // ================= Register =================
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] CreateUser user)
         {
@@ -25,7 +24,6 @@ namespace Exam.API.Controllers
             return res.Success ? Ok(res) : BadRequest(res);
         }
 
-        // ================= Login =================
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] Login user)
         {
@@ -33,8 +31,6 @@ namespace Exam.API.Controllers
             return res.Success ? Ok(res) : Unauthorized(res);
         }
 
-        // ================= Refresh Token =================
-        // ❗ لازم AllowAnonymous
         [AllowAnonymous]
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
@@ -43,27 +39,12 @@ namespace Exam.API.Controllers
             return res.Success ? Ok(res) : Unauthorized(res);
         }
 
-        // ================= Logout (حقيقي) =================
-        [Authorize]
+        [AllowAnonymous]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request)
         {
             var res = await _authenticationService.Logout(request.RefreshToken);
             return res.Success ? Ok(res) : BadRequest(res);
-        }
-
-
-        // ================= Current User =================
-        [Authorize]
-        [HttpGet("me")]
-        public IActionResult GetCurrentUser()
-        {
-            return Ok(new
-            {
-                Id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value,
-                Email = User.FindFirst(ClaimTypes.Email)?.Value,
-                Role = User.FindFirst(ClaimTypes.Role)?.Value
-            });
         }
     }
 }

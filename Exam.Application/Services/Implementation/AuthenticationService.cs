@@ -30,7 +30,7 @@ namespace Exam.Application.Services.Implementation
             _loginValidator = loginValidator;
         }
 
-        // ✅ Register
+        // ================= Register =================
         public async Task<ServiceResponse> CreateUser(CreateUser user)
         {
             var validation = await _createUserValidator.ValidateAsync(user);
@@ -46,7 +46,7 @@ namespace Exam.Application.Services.Implementation
             return ServiceResponse.Ok("User created successfully");
         }
 
-        // ✅ Login
+        // ================= Login =================
         public async Task<LoginResponse> LoginUser(Login user)
         {
             var validation = await _loginValidator.ValidateAsync(user);
@@ -68,12 +68,19 @@ namespace Exam.Application.Services.Implementation
             string token = _tokenManagement.GenerateToken(claims);
             string refreshToken = _tokenManagement.GetRefreshToken();
 
-            await _tokenManagement.UpdateRefreshToken(appUser.Id, refreshToken);
+            // 🔥 الحل هنا
+            int updated = await _tokenManagement.UpdateRefreshToken(appUser.Id, refreshToken);
+
+            // لو مفيش record قبل كده → Insert
+            if (updated == 0)
+            {
+                await _tokenManagement.AddRefreshToken(appUser.Id, refreshToken);
+            }
 
             return new LoginResponse(true, "Login successful", token, refreshToken);
         }
 
-        // ✅ Refresh Token
+        // ================= Refresh Token =================
         public async Task<LoginResponse> ReviveToken(string refreshToken)
         {
             bool valid = await _tokenManagement.ValidateRefreshToken(refreshToken);
@@ -93,9 +100,22 @@ namespace Exam.Application.Services.Implementation
             string newToken = _tokenManagement.GenerateToken(claims);
             string newRefreshToken = _tokenManagement.GetRefreshToken();
 
-            await _tokenManagement.UpdateRefreshToken(user.Id, newRefreshToken);
+            int updated = await _tokenManagement.UpdateRefreshToken(user.Id, newRefreshToken);
+            if (updated == 0)
+            {
+                await _tokenManagement.AddRefreshToken(user.Id, newRefreshToken);
+            }
 
             return new LoginResponse(true, "Token refreshed", newToken, newRefreshToken);
+        }
+        public async Task<ServiceResponse> Logout(string refreshToken)
+        {
+            bool revoked = await _tokenManagement.RevokeRefreshToken(refreshToken);
+
+            if (!revoked)
+                return ServiceResponse.Fail("Invalid refresh token");
+
+            return ServiceResponse.Ok("Logged out successfully");
         }
     }
 }

@@ -4,14 +4,10 @@ using Exam.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Exam.Infrastructure.Repository.Authentication
 {
@@ -26,94 +22,105 @@ namespace Exam.Infrastructure.Repository.Authentication
             _config = config;
         }
 
-        // ✅ توليد JWT Token
+        // ================= JWT =================
         public string GenerateToken(List<Claim> claims)
         {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
-            var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expiration = DateTime.UtcNow.AddHours(2);
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(_config["Jwt:Key"]!)
+            );
+
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: expiration,
-                signingCredentials: cred
+                expires: DateTime.UtcNow.AddMinutes(15),
+                signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        // ✅ إنشاء Refresh Token عشوائي وآمن (بدون ترميز)
+        // ================= Refresh Token =================
         public string GetRefreshToken()
         {
-            const int Bytes = 64;
-            byte[] bytes = new byte[Bytes];
-
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(bytes);
-            }
-
-            // ❌ لا تستخدم WebUtility.UrlEncode هنا
-            return Convert.ToBase64String(bytes);
+            return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
         }
 
-        // ✅ استخراج Claims من JWT Token
-        public List<Claim> GetUserClaims(string token)
+        public async Task<int> AddRefreshToken(string userId, string refreshToken)
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var jwtToken = tokenHandler.ReadJwtToken(token);
-            return jwtToken?.Claims?.ToList() ?? new List<Claim>();
+            var token = new RefreshToken
+            {
+                UserId = userId,
+                Token = refreshToken,
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                IsRevoked = false
+            };
+
+            _context.RefreshToken.Add(token);
+            return await _context.SaveChangesAsync();
         }
 
-        // ✅ الحصول على UserId من RefreshToken
-        public async Task<string?> GetUserIdByRefreshToken(string refreshToken)
+        public async Task<int> UpdateRefreshToken(string userId, string refreshToken)
         {
             var token = await _context.RefreshToken
-                .FirstOrDefaultAsync(e => e.Token == refreshToken);
+                .FirstOrDefaultAsync(x => x.UserId == userId && !x.IsRevoked);
+
+            if (token == null)
+                return 0;
+
+            token.Token = refreshToken;
+            token.ExpiresAt = DateTime.UtcNow.AddDays(7);
+
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> ValidateRefreshToken(string refreshToken)
+        {
+            return await _context.RefreshToken.AnyAsync(x =>
+                x.Token == refreshToken &&
+                !x.IsRevoked &&
+                x.ExpiresAt > DateTime.UtcNow);
+        }
+
+        public async Task<string?> GetUserIdByRefreshToken(string refreshToken)
+        {
+            var token = await _context.RefreshToken.FirstOrDefaultAsync(x =>
+                x.Token == refreshToken &&
+                !x.IsRevoked &&
+                x.ExpiresAt > DateTime.UtcNow);
+
             return token?.UserId;
         }
 
-        // ✅ إضافة Refresh Token جديد
-        public async Task<int> AddRefreshToken(string userId, string refreshToken)
-        {
-            _context.RefreshToken.Add(new RefreshToken
-            {
-                UserId = userId,
-                Token = refreshToken
-            });
-
-            return await _context.SaveChangesAsync();
-        }
-
-        // ✅ تحديث Refresh Token موجود
-        public async Task<int> UpdateRefreshToken(string userId, string refreshToken)
-        {
-            var existingToken = await _context.RefreshToken
-                .FirstOrDefaultAsync(e => e.UserId == userId);
-
-            if (existingToken == null)
-                return -1;
-
-            existingToken.Token = refreshToken;
-            return await _context.SaveChangesAsync();
-        }
-
-        // ✅ التحقق من صحة الـ Refresh Token
-        public async Task<bool> ValidateRefreshToken(string refreshToken)
-        {
-            var user = await _context.RefreshToken
-                .FirstOrDefaultAsync(e => e.Token == refreshToken);
-            return user != null;
-        }
-
-        // ✅ التحقق هل المستخدم عنده توكن أساساً
         public async Task<bool> ValidateRefreshTokenForUser(string userId)
         {
-            return await _context.RefreshToken.AnyAsync(r => r.UserId == userId);
+            return await _context.RefreshToken.AnyAsync(x =>
+                x.UserId == userId &&
+                !x.IsRevoked &&
+                x.ExpiresAt > DateTime.UtcNow);
+        }
+
+        public List<Claim> GetUserClaims(string token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var jwt = handler.ReadJwtToken(token);
+            return jwt.Claims.ToList();
+        }
+        public async Task<bool> RevokeRefreshToken(string refreshToken)
+        {
+            var token = await _context.RefreshToken
+                .FirstOrDefaultAsync(x => x.Token == refreshToken && !x.IsRevoked);
+
+            if (token == null)
+                return false;
+
+            token.IsRevoked = true;
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
-}
 
+}
 

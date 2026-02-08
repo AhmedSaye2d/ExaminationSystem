@@ -1,4 +1,4 @@
-using Exam.Infrastructure.Middleware;
+﻿using Exam.Infrastructure.Middleware;
 using Exam.Infrastructure.DependencyInjection;
 using Exam.Application.DependencyInjection;
 

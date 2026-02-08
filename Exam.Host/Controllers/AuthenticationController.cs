@@ -2,6 +2,7 @@
 using Exam.Application.Services.Interfaces.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Exam.API.Controllers
 {
@@ -16,7 +17,7 @@ namespace Exam.API.Controllers
             _authenticationService = authenticationService;
         }
 
-        // ✅ Register
+        // ================= Register =================
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] CreateUser user)
         {
@@ -24,7 +25,7 @@ namespace Exam.API.Controllers
             return res.Success ? Ok(res) : BadRequest(res);
         }
 
-        // ✅ Login
+        // ================= Login =================
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] Login user)
         {
@@ -32,7 +33,9 @@ namespace Exam.API.Controllers
             return res.Success ? Ok(res) : Unauthorized(res);
         }
 
-        // ✅ Refresh Token
+        // ================= Refresh Token =================
+        // ❗ لازم AllowAnonymous
+        [AllowAnonymous]
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
@@ -40,29 +43,27 @@ namespace Exam.API.Controllers
             return res.Success ? Ok(res) : Unauthorized(res);
         }
 
-        // ✅ Logout (Invalidate Refresh Token)
+        // ================= Logout (حقيقي) =================
         [Authorize]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request)
         {
-            await _authenticationService.ReviveToken(request.RefreshToken);
-            return Ok("Logged out successfully");
+            var res = await _authenticationService.Logout(request.RefreshToken);
+            return res.Success ? Ok(res) : BadRequest(res);
         }
 
-        // ✅ Get Current Logged User
+
+        // ================= Current User =================
         [Authorize]
         [HttpGet("me")]
         public IActionResult GetCurrentUser()
         {
-            var user = new
+            return Ok(new
             {
-                Id = User.FindFirst("uid")?.Value,
-                Email = User.Identity?.Name,
-                Role = User.FindFirst("role")?.Value,
-                UserType = User.FindFirst("userType")?.Value
-            };
-
-            return Ok(user);
+                Id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value,
+                Email = User.FindFirst(ClaimTypes.Email)?.Value,
+                Role = User.FindFirst(ClaimTypes.Role)?.Value
+            });
         }
     }
 }

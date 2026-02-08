@@ -30,6 +30,8 @@ namespace Exam.Domain.Interface.Authentication
         // تحديث Refresh Token لمستخدم موجود
         Task<int> UpdateRefreshToken(string userId, string refreshToken);
         Task<bool> ValidateRefreshTokenForUser(string userId);
+        Task<bool> RevokeRefreshToken(string refreshToken);
+
     }
 }
 

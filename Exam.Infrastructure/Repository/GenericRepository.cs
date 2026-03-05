@@ -55,14 +55,20 @@ namespace Exam.Infrastructure.Repository
         // FIND WITH CONDITION
         // ============================================
         public async Task<IEnumerable<TEntity>> FindAsync(
-            Expression<Func<TEntity, bool>> predicate)
+            Expression<Func<TEntity, bool>> predicate, 
+            params string[] includes)
         {
             IQueryable<TEntity> query = _dbSet;
 
-            // 🔥 فلترة Soft Delete
+            // 🔥 Soft Delete
             if (typeof(BaseEntity).IsAssignableFrom(typeof(TEntity)))
             {
                 query = query.Where(e => !EF.Property<bool>(e, "IsDeleted"));
+            }
+
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
             }
 
             return await query
@@ -119,6 +125,41 @@ namespace Exam.Infrastructure.Repository
             return await _dbSet
                 .Where(e => EF.Property<int>(e, "Id") == id)
                 .AnyAsync();
+        }
+
+        // ============================================
+        // GET PAGED
+        // ============================================
+        public async Task<(IEnumerable<TEntity> Items, int TotalCount)> GetPagedAsync(
+            int page, 
+            int pageSize, 
+            Expression<Func<TEntity, bool>>? predicate = null, 
+            bool asNoTracking = true)
+        {
+            IQueryable<TEntity> query = _dbSet;
+
+            // 🔥 Soft Delete filter
+            if (typeof(BaseEntity).IsAssignableFrom(typeof(TEntity)))
+            {
+                query = query.Where(e => !EF.Property<bool>(e, "IsDeleted"));
+            }
+
+            if (predicate != null)
+            {
+                query = query.Where(predicate);
+            }
+
+            int totalCount = await query.CountAsync();
+
+            if (asNoTracking)
+                query = query.AsNoTracking();
+
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
         }
     }
 }

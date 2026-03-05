@@ -23,6 +23,18 @@ public class QuestionService : IQuestionService
         return _mapper.Map<IEnumerable<QuestionDTO>>(questions);
     }
 
+    public async Task<(IEnumerable<QuestionDTO> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, int? courseId)
+    {
+        var (items, totalCount) = await _unitOfWork.Repository<Question>()
+            .GetPagedAsync(
+                page, 
+                pageSize, 
+                predicate: courseId.HasValue ? q => q.ExamQuestions.Any(eq => eq.Exam.CourseID == courseId.Value) : null
+            );
+            
+        return (_mapper.Map<IEnumerable<QuestionDTO>>(items), totalCount);
+    }
+
     public async Task<QuestionDTO> GetByIdAsync(int id)
     {
         var question = await _unitOfWork.Repository<Question>().GetByIdAsync(id)

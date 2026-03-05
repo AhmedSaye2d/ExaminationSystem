@@ -6,6 +6,7 @@ using Exam.Application.Services.Interfaces.IChoiceServices;
 using Exam.Application.Services.Interfaces.ICourseService;
 using Exam.Application.Services.Interfaces.IDepartmentServices;
 using Exam.Application.Services.Interfaces.IExamServices;
+using Exam.Application.Services.Interfaces.IExamStudentServices;
 using Exam.Application.Services.Interfaces.IQuestionServices;
 using Exam.Application.Validation;
 using Exam.Application.Validation.Authentication;
@@ -28,6 +29,7 @@ namespace Exam.Application.DependencyInjection
             services.AddScoped<IDepartmentService, DepartmentService>();
             services.AddScoped<IInstructorService, InstructorService>();
             services.AddScoped<IStudentService, StudentService>();
+            services.AddScoped<IStudentExamService, StudentExamService>();
 
             return services;
 

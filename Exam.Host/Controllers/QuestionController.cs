@@ -15,6 +15,13 @@ namespace Exam.API.Controllers
             _questionService = questionService;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Get([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] int? courseId = null)
+        {
+            var res = await _questionService.GetPagedAsync(page, pageSize, courseId);
+            return Ok(new { data = res.Items, totalCount = res.TotalCount, page, pageSize });
+        }
+
         [HttpGet("GetAll")]
         public async Task<IActionResult> GetAll()
         {

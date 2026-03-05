@@ -143,5 +143,70 @@ namespace Exam.Application.Services.Implementation
             await examStudentRepo.UpdateAsync(examStudent);
             await _unitOfWork.CompleteAsync();
         }
+
+        // ================================
+        // GET EXAM RESULTS
+        // ================================
+        public async Task<Exam.Application.Dto.SubmitExam.ExamResultDTO> GetExamResultAsync(int examId, int studentId)
+        {
+            var examStudents = await _unitOfWork.Repository<ExamStudent>()
+                .FindAsync(x => x.ExamId == examId && x.StudentId == studentId, "Exam", "Student");
+
+            var session = examStudents.FirstOrDefault() ?? throw new ItemNotFoundException("Exam session not found");
+
+            return new Exam.Application.Dto.SubmitExam.ExamResultDTO
+            {
+                ExamId = session.ExamId,
+                StudentId = session.StudentId,
+                ExamName = session.Exam?.Name ?? "Unknown",
+                StudentName = session.Student != null ? $"{session.Student.FirstName} {session.Student.LastName}" : "Unknown",
+                Score = session.Score,
+                TotalGrade = session.Exam?.TotalGrade ?? 0,
+                IsPassed = session.Exam != null && session.Score >= (session.Exam.TotalGrade / 2.0), // Example pass condition
+                StartDate = session.StartDate,
+                SubmissionDate = session.SubmissionDate,
+                IsSubmitted = session.IsSubmitted
+            };
+        }
+
+        public async Task<IEnumerable<Exam.Application.Dto.SubmitExam.ExamResultDTO>> GetStudentResultsAsync(int studentId)
+        {
+            var examStudents = await _unitOfWork.Repository<ExamStudent>()
+                .FindAsync(x => x.StudentId == studentId, "Exam", "Student");
+
+            return examStudents.Select(session => new Exam.Application.Dto.SubmitExam.ExamResultDTO
+            {
+                ExamId = session.ExamId,
+                StudentId = session.StudentId,
+                ExamName = session.Exam?.Name ?? "Unknown",
+                StudentName = session.Student != null ? $"{session.Student.FirstName} {session.Student.LastName}" : "Unknown",
+                Score = session.Score,
+                TotalGrade = session.Exam?.TotalGrade ?? 0,
+                IsPassed = session.Exam != null && session.Score >= (session.Exam.TotalGrade / 2.0),
+                StartDate = session.StartDate,
+                SubmissionDate = session.SubmissionDate,
+                IsSubmitted = session.IsSubmitted
+            });
+        }
+
+        public async Task<IEnumerable<Exam.Application.Dto.SubmitExam.ExamResultDTO>> GetExamResultsAsync(int examId)
+        {
+            var examStudents = await _unitOfWork.Repository<ExamStudent>()
+                .FindAsync(x => x.ExamId == examId, "Exam", "Student");
+
+            return examStudents.Select(session => new Exam.Application.Dto.SubmitExam.ExamResultDTO
+            {
+                ExamId = session.ExamId,
+                StudentId = session.StudentId,
+                ExamName = session.Exam?.Name ?? "Unknown",
+                StudentName = session.Student != null ? $"{session.Student.FirstName} {session.Student.LastName}" : "Unknown",
+                Score = session.Score,
+                TotalGrade = session.Exam?.TotalGrade ?? 0,
+                IsPassed = session.Exam != null && session.Score >= (session.Exam.TotalGrade / 2.0),
+                StartDate = session.StartDate,
+                SubmissionDate = session.SubmissionDate,
+                IsSubmitted = session.IsSubmitted
+            });
+        }
     }
 }

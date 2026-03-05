@@ -5,6 +5,7 @@ namespace Exam.Application.Services.Interfaces.IQuestionServices
     public interface IQuestionService
     {
         Task<IEnumerable<QuestionDTO>> GetAllAsync();
+        Task<(IEnumerable<QuestionDTO> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, int? courseId);
         Task<QuestionDTO> GetByIdAsync(int id);
 
         Task CreateAsync(QuestionCreateDTO dto);

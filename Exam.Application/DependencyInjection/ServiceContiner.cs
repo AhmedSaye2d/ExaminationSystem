@@ -1,6 +1,12 @@
 ﻿using Exam.Application.Mapping;
 using Exam.Application.Services.Implementation;
+using Exam.Application.Services.Interfaces;
 using Exam.Application.Services.Interfaces.Authentication;
+using Exam.Application.Services.Interfaces.IChoiceServices;
+using Exam.Application.Services.Interfaces.ICourseService;
+using Exam.Application.Services.Interfaces.IDepartmentServices;
+using Exam.Application.Services.Interfaces.IExamServices;
+using Exam.Application.Services.Interfaces.IQuestionServices;
 using Exam.Application.Validation;
 using Exam.Application.Validation.Authentication;
 using FluentValidation;
@@ -15,7 +21,13 @@ namespace Exam.Application.DependencyInjection
             services.AddValidatorsFromAssemblyContaining<CreateUserValidator>();
             services.AddScoped<IValidationService, ValidationService>();
             services.AddScoped<IAuthenticationServices, AuthenticationService>();
-
+            services.AddScoped<IExamService, ExamService>();
+            services.AddScoped<IChoiceService, ChoiceService>();
+            services.AddScoped<ICourseService, CourseService>();
+            services.AddScoped<IQuestionService, QuestionService>();
+            services.AddScoped<IDepartmentService, DepartmentService>();
+            services.AddScoped<IInstructorService, InstructorService>();
+            services.AddScoped<IStudentService, StudentService>();
 
             return services;
 

@@ -1,17 +1,21 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using Exam.Application.Exceptions;
 
 namespace Exam.Infrastructure.Middleware
 {
     public class ExceptionHandlingMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-        public ExceptionHandlingMiddleware(RequestDelegate next)
+        public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
         {
             _next = next;
+            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -20,62 +24,98 @@ namespace Exam.Infrastructure.Middleware
             {
                 await _next(context);
             }
+
+            // ==============================
+            // Custom Not Found Exception
+            // ==============================
+            catch (ItemNotFoundException ex)
+            {
+                await HandleExceptionAsync(
+                    context,
+                    StatusCodes.Status404NotFound,
+                    ex.Message
+                );
+            }
+
+            // ==============================
+            // Database Update Errors
+            // ==============================
             catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Database update error occurred.");
                 await HandleDbExceptionAsync(context, ex);
             }
+
+            // ==============================
+            // General Errors
+            // ==============================
             catch (Exception ex)
             {
-                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                context.Response.ContentType = "application/json";
-
-                await WriteError(context, $"Unexpected error occurred: {ex.Message}");
+                _logger.LogError(ex, "An unexpected error occurred: {Message}", ex.Message);
+                await HandleExceptionAsync(
+                    context,
+                    StatusCodes.Status500InternalServerError,
+                    $"Internal Server Error: {ex.GetType().Name} - {ex.Message}"
+                );
             }
         }
 
         private async Task HandleDbExceptionAsync(HttpContext context, DbUpdateException ex)
         {
-            context.Response.ContentType = "application/json";
-
             if (ex.InnerException is SqlException sqlEx)
             {
                 switch (sqlEx.Number)
                 {
                     case 2627: // Unique constraint
-                        context.Response.StatusCode = StatusCodes.Status409Conflict;
-                        await WriteError(context, "Duplicate value");
+                        await HandleExceptionAsync(context,
+                            StatusCodes.Status409Conflict,
+                            "Duplicate value");
                         break;
 
                     case 515: // Cannot insert null
-                        context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                        await WriteError(context, "Required field is missing");
+                        await HandleExceptionAsync(context,
+                            StatusCodes.Status400BadRequest,
+                            "Required field is missing");
                         break;
 
                     case 547: // Foreign key violation
-                        context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                        await WriteError(context, "Invalid reference data");
+                        await HandleExceptionAsync(context,
+                            StatusCodes.Status400BadRequest,
+                            "Invalid reference data");
                         break;
 
                     default:
-                        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                        await WriteError(context, "Database error occurred");
+                        await HandleExceptionAsync(context,
+                            StatusCodes.Status500InternalServerError,
+                            "Database error occurred");
                         break;
                 }
             }
             else
             {
-                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                await WriteError(context, "Database error occurred");
+                await HandleExceptionAsync(context,
+                    StatusCodes.Status500InternalServerError,
+                    "Database error occurred");
             }
         }
 
-        private static Task WriteError(HttpContext context, string message)
+        private static async Task HandleExceptionAsync(
+            HttpContext context,
+            int statusCode,
+            string message)
         {
-            return context.Response.WriteAsync(JsonSerializer.Serialize(new
+            context.Response.StatusCode = statusCode;
+            context.Response.ContentType = "application/json";
+
+            var response = new
             {
                 success = false,
+                statusCode,
                 error = message
-            }));
+            };
+
+            await context.Response.WriteAsync(
+                JsonSerializer.Serialize(response));
         }
     }
 }

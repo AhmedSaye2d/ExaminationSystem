@@ -1,0 +1,19 @@
+﻿  Determining projects to restore...
+  All projects are up-to-date for restore.
+C:\Program Files\dotnet\sdk\10.0.200-preview.0.26103.119\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.RuntimeIdentifierInference.targets(383,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [D:\FinalProject\ExaminationSystem\Exam.Domain\Exam.Domain.csproj]
+C:\Program Files\dotnet\sdk\10.0.200-preview.0.26103.119\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.RuntimeIdentifierInference.targets(383,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [D:\FinalProject\ExaminationSystem\Exam.Infrastructure\Exam.Infrastructure.csproj]
+C:\Program Files\dotnet\sdk\10.0.200-preview.0.26103.119\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.RuntimeIdentifierInference.targets(383,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [D:\FinalProject\ExaminationSystem\Exam.Host\Exam.Host.csproj]
+  Exam.Domain -> D:\FinalProject\ExaminationSystem\Exam.Domain\bin\Debug\net9.0\Exam.Domain.dll
+C:\Program Files\dotnet\sdk\10.0.200-preview.0.26103.119\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.RuntimeIdentifierInference.targets(383,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [D:\FinalProject\ExaminationSystem\Exam.Application\Exam.Application.csproj]
+  Exam.Infrastructure -> D:\FinalProject\ExaminationSystem\Exam.Infrastructure\bin\Debug\net9.0\Exam.Infrastructure.dll
+D:\FinalProject\ExaminationSystem\Exam.Application\Dto\Choice\ChoiceReadDTO.cs(12,23): warning CS8618: Non-nullable property 'Text' must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring the property as nullable. [D:\FinalProject\ExaminationSystem\Exam.Application\Exam.Application.csproj]
+D:\FinalProject\ExaminationSystem\Exam.Application\Services\Implementation\InstructorService.cs(73,51): error CS1061: 'InstructorUpdateDTO' does not contain a definition for 'FullName' and no accessible extension method 'FullName' accepting a first argument of type 'InstructorUpdateDTO' could be found (are you missing a using directive or an assembly reference?) [D:\FinalProject\ExaminationSystem\Exam.Application\Exam.Application.csproj]
+
+Build FAILED.
+
+D:\FinalProject\ExaminationSystem\Exam.Application\Dto\Choice\ChoiceReadDTO.cs(12,23): warning CS8618: Non-nullable property 'Text' must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring the property as nullable. [D:\FinalProject\ExaminationSystem\Exam.Application\Exam.Application.csproj]
+D:\FinalProject\ExaminationSystem\Exam.Application\Services\Implementation\InstructorService.cs(73,51): error CS1061: 'InstructorUpdateDTO' does not contain a definition for 'FullName' and no accessible extension method 'FullName' accepting a first argument of type 'InstructorUpdateDTO' could be found (are you missing a using directive or an assembly reference?) [D:\FinalProject\ExaminationSystem\Exam.Application\Exam.Application.csproj]
+    1 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:04.21

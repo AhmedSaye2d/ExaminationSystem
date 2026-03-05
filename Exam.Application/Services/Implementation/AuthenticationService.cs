@@ -5,6 +5,8 @@ using Exam.Application.Services.Interfaces.Authentication;
 using Exam.Domain.Entities.Identity;
 using Exam.Domain.Interface.Authentication;
 using FluentValidation;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Exam.Application.Services.Implementation
 {
@@ -38,10 +40,13 @@ namespace Exam.Application.Services.Implementation
                 return ServiceResponse.Fail(validation.Errors.First().ErrorMessage);
 
             var appUser = _mapper.Map<AppUser>(user);
+            var result = await _userManagement.CreateUser(appUser, user.Password);
 
-            bool created = await _userManagement.CreateUser(appUser, user.Password);
-            if (!created)
-                return ServiceResponse.Fail("User already exists");
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                return ServiceResponse.Fail(errors);
+            }
 
             return ServiceResponse.Ok("User created successfully");
         }
@@ -87,23 +92,23 @@ namespace Exam.Application.Services.Implementation
             if (!valid)
                 return new LoginResponse(false, "Invalid refresh token");
 
-            string? userId = await _tokenManagement.GetUserIdByRefreshToken(refreshToken);
-            if (string.IsNullOrEmpty(userId))
+            var userId = await _tokenManagement.GetUserIdByRefreshToken(refreshToken);
+            if (userId == null)
                 return new LoginResponse(false, "User not found");
 
-            var user = await _userManagement.GetUserById(userId);
-            if (user == null)
+            var appUser = await _userManagement.GetUserById(userId.Value);
+            if (appUser == null)
                 return new LoginResponse(false, "User not found");
 
-            var claims = await _userManagement.GetUserClaim(user.Email!);
+            var claims = await _userManagement.GetUserClaim(appUser.Email!);
 
             string newToken = _tokenManagement.GenerateToken(claims);
             string newRefreshToken = _tokenManagement.GetRefreshToken();
 
-            int updated = await _tokenManagement.UpdateRefreshToken(user.Id, newRefreshToken);
+            int updated = await _tokenManagement.UpdateRefreshToken(appUser.Id, newRefreshToken);
             if (updated == 0)
             {
-                await _tokenManagement.AddRefreshToken(user.Id, newRefreshToken);
+                await _tokenManagement.AddRefreshToken(appUser.Id, newRefreshToken);
             }
 
             return new LoginResponse(true, "Token refreshed", newToken, newRefreshToken);

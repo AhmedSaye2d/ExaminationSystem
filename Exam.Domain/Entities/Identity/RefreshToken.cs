@@ -1,18 +1,14 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Exam.Domain.Entities.Common;
+using System;
 
 namespace Exam.Domain.Entities.Identity
 {
-    public class RefreshToken
+    public class RefreshToken : BaseEntity
     {
-        public int Id { get; set; }
-
         public string Token { get; set; } = string.Empty;
-
-        public DateTime ExpiresAt { get; set; } = DateTime.UtcNow.AddDays(7);
-
-        public bool IsRevoked { get; set; } = false;
-
-        public string UserId { get; set; } = string.Empty;
+        public DateTime ExpiresAt { get; set; }
+        public bool IsRevoked { get; set; }
+        public int UserId { get; set; }
         public AppUser User { get; set; } = null!;
     }
 }

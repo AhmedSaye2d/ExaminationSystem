@@ -4,6 +4,9 @@ using Exam.Domain.Interface.Authentication;
 using Exam.Infrastructure.Data;
 using Exam.Infrastructure.Middleware;
 using Exam.Infrastructure.Repository.Authentication;
+using Exam.Infrastructure.Repositories;
+using Exam.Domain;
+using Exam.Domain.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
@@ -12,6 +15,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System;
 
 namespace Exam.Infrastructure.DependencyInjection
 {
@@ -21,7 +25,6 @@ namespace Exam.Infrastructure.DependencyInjection
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            // ===================== DbContext =====================
             services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(
                     configuration.GetConnectionString("Default"),
@@ -34,7 +37,7 @@ namespace Exam.Infrastructure.DependencyInjection
             );
 
             // ===================== Identity =====================
-            services.AddIdentity<AppUser, IdentityRole>(options =>
+            services.AddIdentity<AppUser, IdentityRole<int>>(options =>
             {
                 options.Password.RequiredLength = 8;
                 options.Password.RequireDigit = true;
@@ -66,10 +69,12 @@ namespace Exam.Infrastructure.DependencyInjection
                     };
                 });
 
-            // ===================== Application Infrastructure Services =====================
             services.AddScoped<IUserManagement, UserManagement>();
             services.AddScoped<IRoleManagement, RoleManagement>();
             services.AddScoped<ITokenManagement, TokenManagement>();
+
+            services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             return services;
         }

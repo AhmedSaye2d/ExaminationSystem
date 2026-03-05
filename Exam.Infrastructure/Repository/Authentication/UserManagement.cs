@@ -4,6 +4,8 @@ using Exam.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Exam.Infrastructure.Repository.Authentication
 {
@@ -23,26 +25,19 @@ namespace Exam.Infrastructure.Repository.Authentication
             _context = context;
         }
 
-        // ✅ Register
-        public async Task<bool> CreateUser(AppUser user, string password)
+        public async Task<IdentityResult> CreateUser(AppUser user, string password)
         {
-            var exists = await _userManager.FindByEmailAsync(user.Email!);
-            if (exists != null)
-                return false;
-
             var result = await _userManager.CreateAsync(user, password);
 
-            if (!result.Succeeded)
-                return false;
+            if (result.Succeeded)
+            {
+                var roleName = user.UserType.ToString();
+                await _userManager.AddToRoleAsync(user, roleName);
+            }
 
-            // optional: add role
-            var roleName = user.UserType.ToString();
-            await _userManager.AddToRoleAsync(user, roleName);
-
-            return true;
+            return result;
         }
 
-        // ✅ Password check (Login)
         public async Task<bool> CheckPassword(AppUser user, string password)
         {
             return await _userManager.CheckPasswordAsync(user, password);
@@ -51,8 +46,8 @@ namespace Exam.Infrastructure.Repository.Authentication
         public async Task<AppUser?> GetUserByEmail(string email)
             => await _userManager.FindByEmailAsync(email);
 
-        public async Task<AppUser?> GetUserById(string id)
-            => await _userManager.FindByIdAsync(id);
+        public async Task<AppUser?> GetUserById(int id)
+            => await _userManager.FindByIdAsync(id.ToString());
 
         public async Task<IEnumerable<AppUser>> GetAllUsers()
             => await _context.Users.ToListAsync();
@@ -66,17 +61,16 @@ namespace Exam.Infrastructure.Repository.Authentication
             return result.Succeeded;
         }
 
-        // ✅ Claims
         public async Task<List<Claim>> GetUserClaim(string email)
         {
-            var user = await GetUserByEmail(email);
+            var user = await _userManager.FindByEmailAsync(email);
             if (user == null) return new();
 
             var roleName = await _roleManagement.GetUserRole(user.Email!);
 
             return new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email!),
                 new Claim("FullName", user.FullName),
                 new Claim(ClaimTypes.Role, roleName!)

@@ -1,6 +1,7 @@
 ﻿using Exam.Infrastructure.Middleware;
 using Exam.Infrastructure.DependencyInjection;
 using Exam.Application.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,7 +37,9 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        var seeder = services.GetRequiredService<Exam.Infrastructure.Data.AppDbContext>();
+        var context = services.GetRequiredService<Exam.Infrastructure.Data.AppDbContext>();
+        await context.Database.MigrateAsync();
+
         // Ensure roles are created
         await Exam.Infrastructure.Data.DbSeeder.SeedRolesAndAdminAsync(services);
     }

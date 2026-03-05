@@ -7,8 +7,6 @@ namespace Exam.Application.Services.Interfaces.Authentication
         Task<ServiceResponse> CreateUser(CreateUser user);
         Task<LoginResponse> LoginUser(Login user);
         Task<LoginResponse> ReviveToken(string refreshToken);
-
-        // ✅ Logout الحقيقي
         Task<ServiceResponse> Logout(string refreshToken);
     }
 }

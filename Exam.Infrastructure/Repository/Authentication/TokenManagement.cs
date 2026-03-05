@@ -48,7 +48,7 @@ namespace Exam.Infrastructure.Repository.Authentication
             return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
         }
 
-        public async Task<int> AddRefreshToken(string userId, string refreshToken)
+        public async Task<int> AddRefreshToken(int userId, string refreshToken)
         {
             var token = new RefreshToken
             {
@@ -58,13 +58,13 @@ namespace Exam.Infrastructure.Repository.Authentication
                 IsRevoked = false
             };
 
-            _context.RefreshToken.Add(token);
+            _context.RefreshTokens.Add(token);
             return await _context.SaveChangesAsync();
         }
 
-        public async Task<int> UpdateRefreshToken(string userId, string refreshToken)
+        public async Task<int> UpdateRefreshToken(int userId, string refreshToken)
         {
-            var token = await _context.RefreshToken
+            var token = await _context.RefreshTokens
                 .FirstOrDefaultAsync(x => x.UserId == userId && !x.IsRevoked);
 
             if (token == null)
@@ -78,15 +78,15 @@ namespace Exam.Infrastructure.Repository.Authentication
 
         public async Task<bool> ValidateRefreshToken(string refreshToken)
         {
-            return await _context.RefreshToken.AnyAsync(x =>
+            return await _context.RefreshTokens.AnyAsync(x =>
                 x.Token == refreshToken &&
                 !x.IsRevoked &&
                 x.ExpiresAt > DateTime.UtcNow);
         }
 
-        public async Task<string?> GetUserIdByRefreshToken(string refreshToken)
+        public async Task<int?> GetUserIdByRefreshToken(string refreshToken)
         {
-            var token = await _context.RefreshToken.FirstOrDefaultAsync(x =>
+            var token = await _context.RefreshTokens.FirstOrDefaultAsync(x =>
                 x.Token == refreshToken &&
                 !x.IsRevoked &&
                 x.ExpiresAt > DateTime.UtcNow);
@@ -94,9 +94,9 @@ namespace Exam.Infrastructure.Repository.Authentication
             return token?.UserId;
         }
 
-        public async Task<bool> ValidateRefreshTokenForUser(string userId)
+        public async Task<bool> ValidateRefreshTokenForUser(int userId)
         {
-            return await _context.RefreshToken.AnyAsync(x =>
+            return await _context.RefreshTokens.AnyAsync(x =>
                 x.UserId == userId &&
                 !x.IsRevoked &&
                 x.ExpiresAt > DateTime.UtcNow);
@@ -110,7 +110,7 @@ namespace Exam.Infrastructure.Repository.Authentication
         }
         public async Task<bool> RevokeRefreshToken(string refreshToken)
         {
-            var token = await _context.RefreshToken
+            var token = await _context.RefreshTokens
                 .FirstOrDefaultAsync(x => x.Token == refreshToken && !x.IsRevoked);
 
             if (token == null)

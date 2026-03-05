@@ -20,7 +20,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Dto\Identity\NewFolder\" />
+	  <Folder Include="Dto\Student\" />
 	</ItemGroup>
 
 </Project>

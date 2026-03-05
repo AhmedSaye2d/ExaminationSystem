@@ -95,5 +95,40 @@ namespace Exam.Application.Services.Implementation
             await courseRepo.DeleteAsync(id);
             await _unitOfWork.CompleteAsync();
         }
+
+        public async Task<IEnumerable<Exam.Application.Dto.Exam.ExamDTO>> GetCourseExamsAsync(int courseId)
+        {
+            var exams = await _unitOfWork.Repository<Domain.Entities.Exam>()
+                .FindAsync(e => e.CourseID == courseId);
+
+            return _mapper.Map<IEnumerable<Exam.Application.Dto.Exam.ExamDTO>>(exams);
+        }
+
+        public async Task AssignInstructorToCourseAsync(int courseId, int instructorId)
+        {
+            var courseRepo = _unitOfWork.Repository<Course>();
+            var instructorRepo = _unitOfWork.Repository<Instructor>();
+            var courseInstructorRepo = _unitOfWork.Repository<CourseInstructor>();
+
+            var course = await courseRepo.GetByIdAsync(courseId)
+                         ?? throw new ItemNotFoundException("Course not found");
+
+            var instructor = await instructorRepo.GetByIdAsync(instructorId)
+                             ?? throw new ItemNotFoundException("Instructor not found");
+
+            var existingAssignment = await courseInstructorRepo
+                .FindAsync(ci => ci.CourseId == courseId && ci.InstructorId == instructorId);
+
+            if (existingAssignment.Any())
+                throw new ArgumentException("Instructor is already assigned to this course");
+
+            await courseInstructorRepo.AddAsync(new CourseInstructor
+            {
+                CourseId = courseId,
+                InstructorId = instructorId
+            });
+
+            await _unitOfWork.CompleteAsync();
+        }
     }
 }

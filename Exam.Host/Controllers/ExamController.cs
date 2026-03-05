@@ -56,5 +56,12 @@ namespace Exam.API.Controllers
             await _examService.AddQuestionsToExamAsync(id, questionIds);
             return Ok(new { message = "Questions added to exam successfully" });
         }
+
+        [HttpDelete("{examId:int}/questions/{questionId:int}")]
+        public async Task<IActionResult> RemoveQuestionFromExam(int examId, int questionId)
+        {
+            await _examService.RemoveQuestionFromExamAsync(examId, questionId);
+            return Ok(new { message = "Question removed from exam successfully" });
+        }
     }
 }

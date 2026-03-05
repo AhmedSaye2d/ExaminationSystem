@@ -49,5 +49,19 @@ namespace Exam.API.Controllers
             await _courseService.DeleteAsync(id);
             return Ok(new { message = "Course deleted successfully" });
         }
+
+        [HttpGet("{courseId:int}/exams")]
+        public async Task<IActionResult> GetCourseExams(int courseId)
+        {
+            var exams = await _courseService.GetCourseExamsAsync(courseId);
+            return Ok(exams);
+        }
+
+        [HttpPost("{courseId:int}/assign-instructor")]
+        public async Task<IActionResult> AssignInstructor(int courseId, [FromQuery] int instructorId)
+        {
+            await _courseService.AssignInstructorToCourseAsync(courseId, instructorId);
+            return Ok(new { message = "Instructor assigned successfully" });
+        }
     }
 }

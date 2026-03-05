@@ -151,5 +151,26 @@ namespace Exam.Application.Services.Implementation
             if (result <= 0)
                 throw new Exception("Failed to add questions");
         }
+
+        public async Task RemoveQuestionFromExamAsync(int examId, int questionId)
+        {
+            var examRepo = _unitOfWork.Repository<Domain.Entities.Exam>();
+            var examQuestionRepo = _unitOfWork.Repository<ExamQuestion>();
+
+            var exam = await examRepo.GetByIdAsync(examId)
+                       ?? throw new ItemNotFoundException("Exam not found");
+
+            var examQuestions = await examQuestionRepo.FindAsync(eq => eq.ExamId == examId && eq.QuestionId == questionId);
+            var examQuestion = examQuestions.FirstOrDefault()
+                               ?? throw new ItemNotFoundException("Question not found in this exam");
+
+            await examQuestionRepo.DeleteAsync(examQuestion.Id);
+
+            exam.TotalGrade -= examQuestion.Points;
+            if (exam.TotalGrade < 0) exam.TotalGrade = 0;
+
+            await examRepo.UpdateAsync(exam);
+            await _unitOfWork.CompleteAsync();
+        }
     }
 }

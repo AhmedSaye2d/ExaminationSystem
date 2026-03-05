@@ -13,5 +13,8 @@ namespace Exam.Application.Services.Interfaces.ICourseService
         Task UpdateAsync(int id, CourseCreateDTO dto);
 
         Task DeleteAsync(int id);
+
+        Task<IEnumerable<Exam.Application.Dto.Exam.ExamDTO>> GetCourseExamsAsync(int courseId);
+        Task AssignInstructorToCourseAsync(int courseId, int instructorId);
     }
 }

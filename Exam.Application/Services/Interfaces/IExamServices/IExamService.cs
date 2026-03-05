@@ -12,5 +12,6 @@ namespace Exam.Application.Services.Interfaces.IExamServices
         Task DeleteAsync(int id);
 
         Task AddQuestionsToExamAsync(int examId, IEnumerable<int> questionIds);
+        Task RemoveQuestionFromExamAsync(int examId, int questionId);
     }
 }

@@ -36,6 +36,20 @@ namespace Exam.API.Controllers
             return Ok(new { message = "Exam submitted successfully" });
         }
 
+        [HttpGet("{examStudentId:int}/questions")]
+        public async Task<IActionResult> GetExamQuestions(int examStudentId)
+        {
+            var questions = await _studentExamService.GetExamQuestionsAsync(examStudentId);
+            return Ok(questions);
+        }
+
+        [HttpGet("{examStudentId:int}/result")]
+        public async Task<IActionResult> GetSessionResult(int examStudentId)
+        {
+            var result = await _studentExamService.GetResultBySessionAsync(examStudentId);
+            return Ok(result);
+        }
+
         [HttpGet("results/exam/{examId:int}")]
         public async Task<IActionResult> GetExamResults(int examId)
         {

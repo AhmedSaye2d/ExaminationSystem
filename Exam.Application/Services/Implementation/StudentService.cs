@@ -7,28 +7,18 @@ using Exam.Application.Services.Interfaces;
 using Exam.Domain;
 using Exam.Domain.Entities;
 using Exam.Domain.Enum;
+using Exam.Domain.Interface;
 
 namespace Exam.Application.Services.Implementation
 {
     public class StudentService : IStudentService
     {
-        private readonly IGenericRepository<Student> _studentRepo;
-        private readonly IGenericRepository<Department> _departmentRepo;
-        private readonly IGenericRepository<CourseStudent> _courseStudentRepo;
-        private readonly IGenericRepository<Course> _courseRepo;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public StudentService(
-            IGenericRepository<Student> studentRepo,
-            IGenericRepository<Department> departmentRepo,
-            IGenericRepository<CourseStudent> courseStudentRepo,
-            IGenericRepository<Course> courseRepo,
-            IMapper mapper)
+        public StudentService(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _studentRepo = studentRepo;
-            _departmentRepo = departmentRepo;
-            _courseStudentRepo = courseStudentRepo;
-            _courseRepo = courseRepo;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -37,7 +27,7 @@ namespace Exam.Application.Services.Implementation
         // ================================
         public async Task<IEnumerable<StudentDTO>> GetAllAsync()
         {
-            var students = await _studentRepo.GetAllAsync();
+            var students = await _unitOfWork.Repository<Student>().GetAllAsync();
 
             var activeStudents = students
                 .Where(s => !s.IsDeleted);
@@ -50,7 +40,7 @@ namespace Exam.Application.Services.Implementation
         // ================================
         public async Task<StudentDTO> GetByIdAsync(int id)
         {
-            var student = await _studentRepo.GetByIdAsync(id);
+            var student = await _unitOfWork.Repository<Student>().GetByIdAsync(id);
 
             if (student == null || student.IsDeleted)
                 throw new ItemNotFoundException("Student not found");
@@ -63,7 +53,7 @@ namespace Exam.Application.Services.Implementation
         // ================================
         public async Task<ServiceResponse> CreateAsync(StudentCreateDTO dto)
         {
-            var departmentExists = await _departmentRepo.ExistsAsync(dto.MajorId);
+            var departmentExists = await _unitOfWork.Repository<Department>().ExistsAsync(dto.MajorId);
             if (!departmentExists)
                 throw new ItemNotFoundException("Department not found");
 
@@ -73,7 +63,8 @@ namespace Exam.Application.Services.Implementation
             student.IsActive = true;
             student.IsDeleted = false;
 
-            await _studentRepo.AddAsync(student);
+            await _unitOfWork.Repository<Student>().AddAsync(student);
+            await _unitOfWork.CompleteAsync();
 
             return ServiceResponse.Ok("Student created successfully");
         }
@@ -83,18 +74,20 @@ namespace Exam.Application.Services.Implementation
         // ================================
         public async Task<ServiceResponse> UpdateAsync(int id, StudentUpdateDTO dto)
         {
-            var student = await _studentRepo.GetByIdAsync(id);
+            var studentRepo = _unitOfWork.Repository<Student>();
+            var student = await studentRepo.GetByIdAsync(id);
 
             if (student == null || student.IsDeleted)
                 throw new ItemNotFoundException("Student not found");
 
-            var departmentExists = await _departmentRepo.ExistsAsync(dto.MajorId);
+            var departmentExists = await _unitOfWork.Repository<Department>().ExistsAsync(dto.MajorId);
             if (!departmentExists)
                 throw new ItemNotFoundException("Department not found");
 
             _mapper.Map(dto, student);
 
-            await _studentRepo.UpdateAsync(student);
+            await studentRepo.UpdateAsync(student);
+            await _unitOfWork.CompleteAsync();
 
             return ServiceResponse.Ok("Student updated successfully");
         }
@@ -104,12 +97,13 @@ namespace Exam.Application.Services.Implementation
         // ================================
         public async Task<ServiceResponse> DeleteAsync(int id)
         {
-            var student = await _studentRepo.GetByIdAsync(id);
+            var studentRepo = _unitOfWork.Repository<Student>();
+            var student = await studentRepo.GetByIdAsync(id);
 
             if (student == null || student.IsDeleted)
                 throw new ItemNotFoundException("Student not found");
 
-            var enrollments = await _courseStudentRepo
+            var enrollments = await _unitOfWork.Repository<CourseStudent>()
                 .FindAsync(cs => cs.StudentId == id);
 
             if (enrollments.Any())
@@ -118,7 +112,8 @@ namespace Exam.Application.Services.Implementation
             student.IsDeleted = true;
             student.IsActive = false;
 
-            await _studentRepo.UpdateAsync(student);
+            await studentRepo.UpdateAsync(student);
+            await _unitOfWork.CompleteAsync();
 
             return ServiceResponse.Ok("Student deleted successfully");
         }
@@ -128,12 +123,12 @@ namespace Exam.Application.Services.Implementation
         // ================================
         public async Task<IEnumerable<CourseDTO>> GetStudentCoursesAsync(int studentId)
         {
-            var student = await _studentRepo.GetByIdAsync(studentId);
+            var student = await _unitOfWork.Repository<Student>().GetByIdAsync(studentId);
 
             if (student == null || student.IsDeleted)
                 throw new ItemNotFoundException("Student not found");
 
-            var enrollments = await _courseStudentRepo
+            var enrollments = await _unitOfWork.Repository<CourseStudent>()
                 .FindAsync(cs => cs.StudentId == studentId);
 
             if (!enrollments.Any())
@@ -142,7 +137,7 @@ namespace Exam.Application.Services.Implementation
             var courseIds = enrollments
                 .Select(e => e.CourseId);
 
-            var courses = await _courseRepo
+            var courses = await _unitOfWork.Repository<Course>()
                 .FindAsync(c => courseIds.Contains(c.Id));
 
             return _mapper.Map<IEnumerable<CourseDTO>>(courses);

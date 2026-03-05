@@ -7,9 +7,9 @@ namespace Exam.Domain
         Task<IEnumerable<TEntity>> GetAllAsync(bool asNoTracking = true);
         Task<TEntity?> GetByIdAsync(int id);
         Task<IEnumerable<TEntity>> FindAsync(Expression<Func<TEntity, bool>> predicate);
-        Task<int> AddAsync(TEntity entity);
-        Task<int> UpdateAsync(TEntity entity);
-        Task<int> DeleteAsync(int id);
+        Task AddAsync(TEntity entity);
+        Task UpdateAsync(TEntity entity);
+        Task DeleteAsync(int id);
         Task<bool> ExistsAsync(int id);
     }
 }

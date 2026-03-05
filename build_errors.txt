@@ -1,0 +1,19 @@
+﻿  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Exam.Domain -> C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Domain\bin\Debug\net9.0\Exam.Domain.dll
+  Exam.Application -> C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Application\bin\Debug\net9.0\Exam.Application.dll
+C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Migrations\20260303193839_first.cs(9,26): warning CS8981: The type name 'first' only contains lower-cased ascii characters. Such names may become reserved for the language. [C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Exam.Infrastructure.csproj]
+C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Migrations\20260303193839_first.Designer.cs(16,19): warning CS8981: The type name 'first' only contains lower-cased ascii characters. Such names may become reserved for the language. [C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Exam.Infrastructure.csproj]
+C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Repository\UnitOfWork.cs(37,45): error CS0246: The type or namespace name 'GenericRepository<>' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Exam.Infrastructure.csproj]
+C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\DependencyInjection\ServiceContiner.cs(76,69): error CS0246: The type or namespace name 'GenericRepository<>' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Exam.Infrastructure.csproj]
+
+Build FAILED.
+
+C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Migrations\20260303193839_first.cs(9,26): warning CS8981: The type name 'first' only contains lower-cased ascii characters. Such names may become reserved for the language. [C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Exam.Infrastructure.csproj]
+C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Migrations\20260303193839_first.Designer.cs(16,19): warning CS8981: The type name 'first' only contains lower-cased ascii characters. Such names may become reserved for the language. [C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Exam.Infrastructure.csproj]
+C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Repository\UnitOfWork.cs(37,45): error CS0246: The type or namespace name 'GenericRepository<>' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Exam.Infrastructure.csproj]
+C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\DependencyInjection\ServiceContiner.cs(76,69): error CS0246: The type or namespace name 'GenericRepository<>' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Exam.Infrastructure.csproj]
+    2 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:03.38

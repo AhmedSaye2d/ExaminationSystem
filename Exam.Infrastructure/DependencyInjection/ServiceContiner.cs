@@ -4,7 +4,7 @@ using Exam.Domain.Interface.Authentication;
 using Exam.Infrastructure.Data;
 using Exam.Infrastructure.Middleware;
 using Exam.Infrastructure.Repository.Authentication;
-using Exam.Infrastructure.Repositories;
+using Exam.Infrastructure.Repository;
 using Exam.Domain;
 using Exam.Domain.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

@@ -3,7 +3,7 @@ using Exam.Domain.Interface;
 using Exam.Infrastructure.Data;
 using System.Collections;
 
-namespace Exam.Infrastructure.Repositories
+namespace Exam.Infrastructure.Repository
 {
     public class UnitOfWork : IUnitOfWork
     {

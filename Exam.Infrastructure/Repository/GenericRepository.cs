@@ -4,7 +4,7 @@ using Exam.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
-namespace Exam.Infrastructure.Repositories
+namespace Exam.Infrastructure.Repository
 {
     public class GenericRepository<TEntity> : IGenericRepository<TEntity>
         where TEntity : class
@@ -74,30 +74,29 @@ namespace Exam.Infrastructure.Repositories
         // ============================================
         // ADD
         // ============================================
-        public async Task<int> AddAsync(TEntity entity)
+        public async Task AddAsync(TEntity entity)
         {
             await _dbSet.AddAsync(entity);
-            return await _context.SaveChangesAsync();
         }
 
         // ============================================
         // UPDATE
         // ============================================
-        public async Task<int> UpdateAsync(TEntity entity)
+        public Task UpdateAsync(TEntity entity)
         {
             _dbSet.Update(entity);
-            return await _context.SaveChangesAsync();
+            return Task.CompletedTask;
         }
 
         // ============================================
         // DELETE (Soft Delete Support)
         // ============================================
-        public async Task<int> DeleteAsync(int id)
+        public async Task DeleteAsync(int id)
         {
             var entity = await _dbSet.FindAsync(id);
 
             if (entity == null)
-                return 0;
+                return;
 
             if (entity is BaseEntity baseEntity)
             {
@@ -110,8 +109,6 @@ namespace Exam.Infrastructure.Repositories
                 // 🔥 Hard Delete
                 _dbSet.Remove(entity);
             }
-
-            return await _context.SaveChangesAsync();
         }
 
         // ============================================

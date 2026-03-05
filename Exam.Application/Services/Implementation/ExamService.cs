@@ -53,12 +53,11 @@ namespace Exam.Application.Services.Implementation
 
             var exam = _mapper.Map<Domain.Entities.Exam>(dto);
 
-            var result = await _unitOfWork
+            await _unitOfWork
                 .Repository<Domain.Entities.Exam>()
                 .AddAsync(exam);
 
-            if (result <= 0)
-                throw new Exception("Failed to create exam");
+            await _unitOfWork.CompleteAsync();
         }
 
         public async Task UpdateAsync(int id, ExamCreateDTO dto)
@@ -71,10 +70,9 @@ namespace Exam.Application.Services.Implementation
 
             _mapper.Map(dto, exam);
 
-            var result = await examRepo.UpdateAsync(exam);
+            await examRepo.UpdateAsync(exam);
 
-            if (result <= 0)
-                throw new Exception("Failed to update exam");
+            await _unitOfWork.CompleteAsync();
         }
 
         public async Task DeleteAsync(int id)
@@ -85,10 +83,9 @@ namespace Exam.Application.Services.Implementation
             if (exam == null)
                 throw new ItemNotFoundException("Exam not found");
 
-            var result = await examRepo.DeleteAsync(id);
+            await examRepo.DeleteAsync(id);
 
-            if (result <= 0)
-                throw new Exception("Failed to delete exam");
+            await _unitOfWork.CompleteAsync();
         }
 
         public async Task AddQuestionsToExamAsync(int examId, IEnumerable<int> questionIds)
@@ -138,10 +135,14 @@ namespace Exam.Application.Services.Implementation
                 throw new ArgumentException("All questions already added to exam");
 
             // إعادة حساب الدرجة
-            var updatedExamQuestions = await examQuestionRepo
-                .FindAsync(eq => eq.ExamId == examId);
+            var examQuestions = await _unitOfWork.Repository<ExamQuestion>()
+                .FindAsync(x => x.ExamId == examId);
 
-            exam.TotalGrade = updatedExamQuestions.Sum(eq => eq.Points);
+            var examQuestionList = examQuestions.ToList();
+
+            var questionIdsInExam = examQuestionList.Select(q => q.QuestionId).ToList();
+
+            exam.TotalGrade = examQuestionList.Sum(eq => eq.Points); // Use the ToList() result here
 
             await examRepo.UpdateAsync(exam);
 

@@ -4,28 +4,29 @@ using Exam.Application.Exceptions;
 using Exam.Application.Services.Interfaces.IDepartmentServices;
 using Exam.Domain;
 using Exam.Domain.Entities;
+using Exam.Domain.Interface;
 namespace Exam.Application.Services.Implementation;
 
 public class DepartmentService : IDepartmentService
 {
-    private readonly IGenericRepository<Department> _repo;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public DepartmentService(IGenericRepository<Department> repo, IMapper mapper)
+    public DepartmentService(IUnitOfWork unitOfWork, IMapper mapper)
     {
-        _repo = repo;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
     public async Task<IEnumerable<DepartmentDTO>> GetAllAsync()
     {
-        var departments = await _repo.GetAllAsync();
+        var departments = await _unitOfWork.Repository<Department>().GetAllAsync();
         return _mapper.Map<IEnumerable<DepartmentDTO>>(departments);
     }
 
     public async Task<DepartmentDTO> GetByIdAsync(int id)
     {
-        var department = await _repo.GetByIdAsync(id);
+        var department = await _unitOfWork.Repository<Department>().GetByIdAsync(id);
 
         if (department == null)
             throw new ItemNotFoundException("Department not found");
@@ -35,24 +36,27 @@ public class DepartmentService : IDepartmentService
 
     public async Task CreateAsync(DepartmentCreateDTO dto)
     {
-        var existing = await _repo.FindAsync(d => d.Name == dto.Name);
+        var repo = _unitOfWork.Repository<Department>();
+        var existing = await repo.FindAsync(d => d.Name == dto.Name);
 
         if (existing.Any())
             throw new ArgumentException("Department already exists");
 
         var department = _mapper.Map<Department>(dto);
 
-        await _repo.AddAsync(department);
+        await repo.AddAsync(department);
+        await _unitOfWork.CompleteAsync();
     }
 
     public async Task UpdateAsync(int id, DepartmentCreateDTO dto)
     {
-        var department = await _repo.GetByIdAsync(id);
+        var repo = _unitOfWork.Repository<Department>();
+        var department = await repo.GetByIdAsync(id);
 
         if (department == null)
             throw new ItemNotFoundException("Department not found");
 
-        var existing = await _repo
+        var existing = await repo
             .FindAsync(d => d.Name == dto.Name && d.Id != id);
 
         if (existing.Any())
@@ -60,16 +64,19 @@ public class DepartmentService : IDepartmentService
 
         _mapper.Map(dto, department);
 
-        await _repo.UpdateAsync(department);
+        await repo.UpdateAsync(department);
+        await _unitOfWork.CompleteAsync();
     }
 
     public async Task DeleteAsync(int id)
     {
-        var department = await _repo.GetByIdAsync(id);
+        var repo = _unitOfWork.Repository<Department>();
+        var department = await repo.GetByIdAsync(id);
 
         if (department == null)
             throw new ItemNotFoundException("Department not found");
 
-        await _repo.DeleteAsync(id);
+        await repo.DeleteAsync(id);
+        await _unitOfWork.CompleteAsync();
     }
 }

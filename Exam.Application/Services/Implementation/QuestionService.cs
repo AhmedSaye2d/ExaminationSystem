@@ -4,32 +4,28 @@ using Exam.Application.Exceptions;
 using Exam.Application.Services.Interfaces.IQuestionServices;
 using Exam.Domain;
 using Exam.Domain.Entities;
+using Exam.Domain.Interface;
 
 public class QuestionService : IQuestionService
 {
-    private readonly IGenericRepository<Question> _questionRepo;
-    private readonly IGenericRepository<Choice> _choiceRepo;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public QuestionService(
-        IGenericRepository<Question> questionRepo,
-        IGenericRepository<Choice> choiceRepo,
-        IMapper mapper)
+    public QuestionService(IUnitOfWork unitOfWork, IMapper mapper)
     {
-        _questionRepo = questionRepo;
-        _choiceRepo = choiceRepo;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
     public async Task<IEnumerable<QuestionDTO>> GetAllAsync()
     {
-        var questions = await _questionRepo.GetAllAsync();
+        var questions = await _unitOfWork.Repository<Question>().GetAllAsync();
         return _mapper.Map<IEnumerable<QuestionDTO>>(questions);
     }
 
     public async Task<QuestionDTO> GetByIdAsync(int id)
     {
-        var question = await _questionRepo.GetByIdAsync(id)
+        var question = await _unitOfWork.Repository<Question>().GetByIdAsync(id)
                        ?? throw new ItemNotFoundException("Question not found");
 
         return _mapper.Map<QuestionDTO>(question);
@@ -39,7 +35,8 @@ public class QuestionService : IQuestionService
     {
         var question = _mapper.Map<Question>(dto);
 
-        await _questionRepo.AddAsync(question);
+        await _unitOfWork.Repository<Question>().AddAsync(question);
+        await _unitOfWork.CompleteAsync();
     }
 
     public async Task<int> AddQuestionWithChoicesAsync(QuestionWithChoicesDTO dto)
@@ -57,11 +54,14 @@ public class QuestionService : IQuestionService
             Type = dto.Type
         };
 
-        await _questionRepo.AddAsync(question);
+        var questionRepo = _unitOfWork.Repository<Question>();
+        var choiceRepo = _unitOfWork.Repository<Choice>();
+
+        await questionRepo.AddAsync(question);
 
         foreach (var choiceDto in dto.Choices)
         {
-            await _choiceRepo.AddAsync(new Choice
+            await choiceRepo.AddAsync(new Choice
             {
                 Text = choiceDto.Text,
                 IsCorrectAnswer = choiceDto.IsCorrect,
@@ -69,24 +69,30 @@ public class QuestionService : IQuestionService
             });
         }
 
+        await _unitOfWork.CompleteAsync();
+
         return question.Id;
     }
 
     public async Task UpdateAsync(int id, QuestionCreateDTO dto)
     {
-        var question = await _questionRepo.GetByIdAsync(id)
+        var questionRepo = _unitOfWork.Repository<Question>();
+        var question = await questionRepo.GetByIdAsync(id)
                        ?? throw new ItemNotFoundException("Question not found");
 
         _mapper.Map(dto, question);
 
-        await _questionRepo.UpdateAsync(question);
+        await questionRepo.UpdateAsync(question);
+        await _unitOfWork.CompleteAsync();
     }
 
     public async Task DeleteAsync(int id)
     {
-        var question = await _questionRepo.GetByIdAsync(id)
+        var questionRepo = _unitOfWork.Repository<Question>();
+        var question = await questionRepo.GetByIdAsync(id)
                        ?? throw new ItemNotFoundException("Question not found");
 
-        await _questionRepo.DeleteAsync(id);
+        await questionRepo.DeleteAsync(id);
+        await _unitOfWork.CompleteAsync();
     }
 }

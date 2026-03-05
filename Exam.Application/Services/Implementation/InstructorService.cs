@@ -6,22 +6,18 @@ using Exam.Application.Services.Interfaces;
 using Exam.Domain;
 using Exam.Domain.Entities;
 using Exam.Domain.Enum;
+using Exam.Domain.Interface;
 
 namespace Exam.Application.Services.Implementation
 {
     public class InstructorService : IInstructorService
     {
-        private readonly IGenericRepository<Instructor> _instructorRepo;
-        private readonly IGenericRepository<Department> _departmentRepo;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public InstructorService(
-            IGenericRepository<Instructor> instructorRepo,
-            IGenericRepository<Department> departmentRepo,
-            IMapper mapper)
+        public InstructorService(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _instructorRepo = instructorRepo;
-            _departmentRepo = departmentRepo;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -30,7 +26,7 @@ namespace Exam.Application.Services.Implementation
         // ================================
         public async Task<IEnumerable<InstructorReadDTO>> GetAllAsync()
         {
-            var instructors = await _instructorRepo.GetAllAsync();
+            var instructors = await _unitOfWork.Repository<Instructor>().GetAllAsync();
 
             var active = instructors.Where(i => !i.IsDeleted);
 
@@ -42,7 +38,7 @@ namespace Exam.Application.Services.Implementation
         // ================================
         public async Task<InstructorReadDTO> GetByIdAsync(int id)
         {
-            var instructor = await _instructorRepo.GetByIdAsync(id);
+            var instructor = await _unitOfWork.Repository<Instructor>().GetByIdAsync(id);
 
             if (instructor == null || instructor.IsDeleted)
                 throw new ItemNotFoundException("Instructor not found");
@@ -55,7 +51,7 @@ namespace Exam.Application.Services.Implementation
         // ================================
         public async Task<ServiceResponse> CreateAsync(InstructorCreateDTO dto)
         {
-            var departmentExists = await _departmentRepo.ExistsAsync(dto.DepartmentId);
+            var departmentExists = await _unitOfWork.Repository<Department>().ExistsAsync(dto.DepartmentId);
             if (!departmentExists)
                 throw new ItemNotFoundException("Department not found");
 
@@ -64,7 +60,8 @@ namespace Exam.Application.Services.Implementation
             instructor.HireDate = dto.HireDate ?? DateTime.UtcNow;
             instructor.UserType = UserType.Instructor;
 
-            await _instructorRepo.AddAsync(instructor);
+            await _unitOfWork.Repository<Instructor>().AddAsync(instructor);
+            await _unitOfWork.CompleteAsync();
 
             return ServiceResponse.Ok("Instructor created successfully");
         }
@@ -74,18 +71,20 @@ namespace Exam.Application.Services.Implementation
         // ================================
         public async Task<ServiceResponse> UpdateAsync(int id, InstructorUpdateDTO dto)
         {
-            var instructor = await _instructorRepo.GetByIdAsync(id);
+            var instructorRepo = _unitOfWork.Repository<Instructor>();
+            var instructor = await instructorRepo.GetByIdAsync(id);
 
             if (instructor == null || instructor.IsDeleted)
                 throw new ItemNotFoundException("Instructor not found");
 
-            var departmentExists = await _departmentRepo.ExistsAsync(dto.DepartmentId);
+            var departmentExists = await _unitOfWork.Repository<Department>().ExistsAsync(dto.DepartmentId);
             if (!departmentExists)
                 throw new ItemNotFoundException("Department not found");
 
             _mapper.Map(dto, instructor);
 
-            await _instructorRepo.UpdateAsync(instructor);
+            await instructorRepo.UpdateAsync(instructor);
+            await _unitOfWork.CompleteAsync();
 
             return ServiceResponse.Ok("Instructor updated successfully");
         }
@@ -95,7 +94,8 @@ namespace Exam.Application.Services.Implementation
         // ================================
         public async Task<ServiceResponse> DeleteAsync(int id)
         {
-            var instructor = await _instructorRepo.GetByIdAsync(id);
+            var instructorRepo = _unitOfWork.Repository<Instructor>();
+            var instructor = await instructorRepo.GetByIdAsync(id);
 
             if (instructor == null || instructor.IsDeleted)
                 throw new ItemNotFoundException("Instructor not found");
@@ -103,7 +103,8 @@ namespace Exam.Application.Services.Implementation
             instructor.IsDeleted = true;
             instructor.IsActive = false;
 
-            await _instructorRepo.UpdateAsync(instructor);
+            await instructorRepo.UpdateAsync(instructor);
+            await _unitOfWork.CompleteAsync();
 
             return ServiceResponse.Ok("Instructor deleted successfully");
         }

@@ -4,34 +4,30 @@ using Exam.Application.Exceptions;
 using Exam.Application.Services.Interfaces.IChoiceServices;
 using Exam.Domain;
 using Exam.Domain.Entities;
+using Exam.Domain.Interface;
 
 namespace Exam.Application.Services.Implementation
 {
     public class ChoiceService : IChoiceService
     {
-        private readonly IGenericRepository<Choice> _choiceRepo;
-        private readonly IGenericRepository<Question> _questionRepo;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public ChoiceService(
-            IGenericRepository<Choice> choiceRepo,
-            IGenericRepository<Question> questionRepo,
-            IMapper mapper)
+        public ChoiceService(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _choiceRepo = choiceRepo;
-            _questionRepo = questionRepo;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
         public async Task<IEnumerable<ChoiceDTO>> GetAllAsync()
         {
-            var choices = await _choiceRepo.GetAllAsync();
+            var choices = await _unitOfWork.Repository<Choice>().GetAllAsync();
             return _mapper.Map<IEnumerable<ChoiceDTO>>(choices);
         }
 
         public async Task<ChoiceDTO> GetByIdAsync(int id)
         {
-            var choice = await _choiceRepo.GetByIdAsync(id);
+            var choice = await _unitOfWork.Repository<Choice>().GetByIdAsync(id);
 
             if (choice == null)
                 throw new ItemNotFoundException("Choice not found");
@@ -41,20 +37,23 @@ namespace Exam.Application.Services.Implementation
 
         public async Task CreateAsync(int questionId, ChoiceCreateDTO dto)
         {
-            var questionExists = await _questionRepo.ExistsAsync(questionId);
+            var questionRepo = _unitOfWork.Repository<Question>();
+            var choiceRepo = _unitOfWork.Repository<Choice>();
+
+            var questionExists = await questionRepo.ExistsAsync(questionId);
             if (!questionExists)
                 throw new ItemNotFoundException("Question not found");
 
             // لو الإجابة الجديدة صحيحة → نلغي أي صحيحة قديمة
             if (dto.IsCorrect)
             {
-                var existingCorrect = await _choiceRepo
+                var existingCorrect = await choiceRepo
                     .FindAsync(c => c.QuestionId == questionId && c.IsCorrectAnswer);
 
                 foreach (var c in existingCorrect)
                 {
                     c.IsCorrectAnswer = false;
-                    await _choiceRepo.UpdateAsync(c);
+                    await choiceRepo.UpdateAsync(c);
                 }
             }
 
@@ -65,7 +64,8 @@ namespace Exam.Application.Services.Implementation
                 QuestionId = questionId
             };
 
-            await _choiceRepo.AddAsync(choice);
+            await choiceRepo.AddAsync(choice);
+            await _unitOfWork.CompleteAsync();
         }
 
         public async Task AddRangeAsync(int questionId, IEnumerable<ChoiceCreateDTO> dtos)
@@ -73,13 +73,14 @@ namespace Exam.Application.Services.Implementation
             if (dtos == null || !dtos.Any())
                 throw new ArgumentException("Choices list cannot be empty");
 
-            var questionExists = await _questionRepo.ExistsAsync(questionId);
+            var questionExists = await _unitOfWork.Repository<Question>().ExistsAsync(questionId);
             if (!questionExists)
                 throw new ItemNotFoundException("Question not found");
 
             if (dtos.Count(c => c.IsCorrect) != 1)
                 throw new ArgumentException("There must be exactly one correct answer");
 
+            var choiceRepo = _unitOfWork.Repository<Choice>();
             foreach (var dto in dtos)
             {
                 var choice = new Choice
@@ -89,41 +90,46 @@ namespace Exam.Application.Services.Implementation
                     QuestionId = questionId
                 };
 
-                await _choiceRepo.AddAsync(choice);
+                await choiceRepo.AddAsync(choice);
             }
+            await _unitOfWork.CompleteAsync();
         }
 
         public async Task UpdateAsync(int id, ChoiceCreateDTO dto)
         {
-            var choice = await _choiceRepo.GetByIdAsync(id);
+            var choiceRepo = _unitOfWork.Repository<Choice>();
+            var choice = await choiceRepo.GetByIdAsync(id);
             if (choice == null)
                 throw new ItemNotFoundException("Choice not found");
 
             if (dto.IsCorrect)
             {
-                var existingCorrect = await _choiceRepo
+                var existingCorrect = await choiceRepo
                     .FindAsync(c => c.QuestionId == choice.QuestionId && c.Id != id);
 
                 foreach (var c in existingCorrect)
                 {
                     c.IsCorrectAnswer = false;
-                    await _choiceRepo.UpdateAsync(c);
+                    await choiceRepo.UpdateAsync(c);
                 }
             }
 
             choice.Text = dto.Text;
             choice.IsCorrectAnswer = dto.IsCorrect;
 
-            await _choiceRepo.UpdateAsync(choice);
+            await choiceRepo.UpdateAsync(choice);
+            await _unitOfWork.CompleteAsync();
         }
 
         public async Task DeleteAsync(int id)
         {
-            var exists = await _choiceRepo.ExistsAsync(id);
+            var choiceRepo = _unitOfWork.Repository<Choice>();
+            var exists = await choiceRepo.ExistsAsync(id);
             if (!exists)
                 throw new ItemNotFoundException("Choice not found");
 
-            await _choiceRepo.DeleteAsync(id);
+            await choiceRepo.DeleteAsync(id);
+            await _unitOfWork.CompleteAsync();
         }
 
         public async Task DeleteRangeAsync(IEnumerable<int> ids)
@@ -131,12 +137,14 @@ namespace Exam.Application.Services.Implementation
             if (ids == null || !ids.Any())
                 throw new ArgumentException("No ids provided");
 
+            var choiceRepo = _unitOfWork.Repository<Choice>();
             foreach (var id in ids)
             {
-                var exists = await _choiceRepo.ExistsAsync(id);
+                var exists = await choiceRepo.ExistsAsync(id);
                 if (exists)
-                    await _choiceRepo.DeleteAsync(id);
+                    await choiceRepo.DeleteAsync(id);
             }
+            await _unitOfWork.CompleteAsync();
         }
     }
 }

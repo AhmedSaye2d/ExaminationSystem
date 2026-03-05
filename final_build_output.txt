@@ -1,0 +1,17 @@
+﻿  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Exam.Domain -> C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Domain\bin\Debug\net9.0\Exam.Domain.dll
+  Exam.Application -> C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Application\bin\Debug\net9.0\Exam.Application.dll
+C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Migrations\20260303193839_first.cs(9,26): warning CS8981: The type name 'first' only contains lower-cased ascii characters. Such names may become reserved for the language. [C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Exam.Infrastructure.csproj]
+C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Migrations\20260303193839_first.Designer.cs(16,19): warning CS8981: The type name 'first' only contains lower-cased ascii characters. Such names may become reserved for the language. [C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Exam.Infrastructure.csproj]
+  Exam.Infrastructure -> C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\bin\Debug\net9.0\Exam.Infrastructure.dll
+  Exam.Host -> C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Host\bin\Debug\net9.0\Exam.Host.dll
+
+Build succeeded.
+
+C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Migrations\20260303193839_first.cs(9,26): warning CS8981: The type name 'first' only contains lower-cased ascii characters. Such names may become reserved for the language. [C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Exam.Infrastructure.csproj]
+C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Migrations\20260303193839_first.Designer.cs(16,19): warning CS8981: The type name 'first' only contains lower-cased ascii characters. Such names may become reserved for the language. [C:\Users\Muhammad\source\repos\ExaminationSystem\Exam.Infrastructure\Exam.Infrastructure.csproj]
+    2 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:04.36

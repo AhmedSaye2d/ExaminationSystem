@@ -1,5 +1,6 @@
 using Exam.Application.Dto.Instructor;
 using Exam.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Exam.API.Controllers
@@ -15,6 +16,7 @@ namespace Exam.API.Controllers
             _instructorService = instructorService;
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpGet("GetAll")]
         public async Task<IActionResult> GetAll()
         {
@@ -22,6 +24,7 @@ namespace Exam.API.Controllers
             return Ok(res);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -29,6 +32,7 @@ namespace Exam.API.Controllers
             return Ok(res);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("Create")]
         public async Task<IActionResult> Create([FromBody] InstructorCreateDTO dto)
         {
@@ -36,6 +40,7 @@ namespace Exam.API.Controllers
             return res.Success ? Ok(res) : BadRequest(res);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("Update/{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] InstructorUpdateDTO dto)
         {
@@ -43,6 +48,7 @@ namespace Exam.API.Controllers
             return res.Success ? Ok(res) : BadRequest(res);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("Delete/{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {

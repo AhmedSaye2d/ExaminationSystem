@@ -33,6 +33,13 @@ namespace Exam.Application.Services.Implementation
             if (DateTime.UtcNow > exam.DueDate)
                 throw new ArgumentException("Exam has ended");
 
+            // 🔥 التحقق من أن الطالب مسجل في الكورس التابع له الامتحان
+            var isEnrolled = await _unitOfWork.Repository<CourseStudent>()
+                .FindAsync(cs => cs.StudentId == studentId && cs.CourseId == exam.CourseID);
+
+            if (!isEnrolled.Any())
+                throw new ArgumentException("You must enroll in the course before starting this exam");
+
             var existingSession = await _unitOfWork.Repository<ExamStudent>()
                 .FindAsync(x => x.ExamId == examId && x.StudentId == studentId);
 
@@ -57,7 +64,7 @@ namespace Exam.Application.Services.Implementation
         // ================================
         // SAVE ANSWER
         // ================================
-        public async Task SaveAnswerAsync(int examStudentId, int examQuestionId, int choiceId)
+        public async Task SaveAnswerAsync(int examStudentId, int questionId, int choiceId)
         {
             var examStudentRepo = _unitOfWork.Repository<ExamStudent>();
             var examAnswerRepo = _unitOfWork.Repository<ExamAnswer>();
@@ -73,7 +80,7 @@ namespace Exam.Application.Services.Implementation
 
             var existingAnswer = await examAnswerRepo
                 .FindAsync(x => x.ExamStudentId == examStudentId
-                             && x.ExamQuestionId == examQuestionId);
+                             && x.QuestionId == questionId);
 
             if (existingAnswer.Any())
             {
@@ -86,7 +93,7 @@ namespace Exam.Application.Services.Implementation
                 await examAnswerRepo.AddAsync(new ExamAnswer
                 {
                     ExamStudentId = examStudentId,
-                    ExamQuestionId = examQuestionId,
+                    QuestionId = questionId,
                     ChoiceId = choiceId
                 });
             }
@@ -101,7 +108,7 @@ namespace Exam.Application.Services.Implementation
         {
             var examStudentRepo = _unitOfWork.Repository<ExamStudent>();
             var examAnswerRepo = _unitOfWork.Repository<ExamAnswer>();
-            var examQuestionRepo = _unitOfWork.Repository<ExamQuestion>();
+            var questionRepo = _unitOfWork.Repository<Question>();
             var choiceRepo = _unitOfWork.Repository<Choice>();
 
             var examStudent = await examStudentRepo.GetByIdAsync(examStudentId)
@@ -117,7 +124,7 @@ namespace Exam.Application.Services.Implementation
                 throw new ArgumentException("No answers found");
 
             var allChoices = await choiceRepo.GetAllAsync();
-            var examQuestions = await examQuestionRepo
+            var questions = await questionRepo
                 .FindAsync(x => x.ExamId == examStudent.ExamId);
 
             double totalScore = 0;
@@ -128,11 +135,11 @@ namespace Exam.Application.Services.Implementation
 
                 if (choice?.IsCorrectAnswer == true)
                 {
-                    var examQuestion = examQuestions
-                        .FirstOrDefault(q => q.Id == answer.ExamQuestionId);
+                    var question = questions
+                        .FirstOrDefault(q => q.Id == answer.QuestionId);
 
-                    if (examQuestion?.Question != null)
-                        totalScore += examQuestion.Question.Grade;
+                    if (question != null)
+                        totalScore += question.Grade;
                 }
             }
 
@@ -150,7 +157,6 @@ namespace Exam.Application.Services.Implementation
         public async Task<IEnumerable<Exam.Application.Dto.Question.QuestionForStudentDTO>> GetExamQuestionsAsync(int examStudentId)
         {
             var examStudentRepo = _unitOfWork.Repository<ExamStudent>();
-            var examQuestionRepo = _unitOfWork.Repository<ExamQuestion>();
             var questionRepo = _unitOfWork.Repository<Exam.Domain.Entities.Question>();
 
             var examStudent = await examStudentRepo.GetByIdAsync(examStudentId)
@@ -159,12 +165,8 @@ namespace Exam.Application.Services.Implementation
             if (examStudent.IsSubmitted)
                 throw new ArgumentException("Exam already submitted");
 
-            // Fetch ExamQuestions
-            var examQuestions = await examQuestionRepo.FindAsync(x => x.ExamId == examStudent.ExamId);
-            var questionIds = examQuestions.Select(eq => eq.QuestionId).ToList();
-
-            // Fetch Questions with Choices
-            var questions = await questionRepo.FindAsync(q => questionIds.Contains(q.Id), "Choices");
+            // Fetch Questions for this exam directly
+            var questions = await questionRepo.FindAsync(q => q.ExamId == examStudent.ExamId, "Choices");
 
             var result = questions.Select(q => new Exam.Application.Dto.Question.QuestionForStudentDTO
             {

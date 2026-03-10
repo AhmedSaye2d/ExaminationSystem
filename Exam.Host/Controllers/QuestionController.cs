@@ -1,11 +1,13 @@
 using Exam.Application.Dto.Question;
 using Exam.Application.Services.Interfaces.IQuestionServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Exam.API.Controllers
 {
     [ApiController]
     [Route("api/questions")]
+    [Authorize]
     public class QuestionsController : ControllerBase
     {
         private readonly IQuestionService _questionService;
@@ -37,6 +39,7 @@ namespace Exam.API.Controllers
         }
 
         [HttpPost("Create")]
+        [Authorize(Roles = "Instructor,Admin")]
         public async Task<IActionResult> Create([FromBody] QuestionCreateDTO dto)
         {
             await _questionService.CreateAsync(dto);
@@ -44,6 +47,7 @@ namespace Exam.API.Controllers
         }
 
         [HttpPut("Update/{id:int}")]
+        [Authorize(Roles = "Instructor,Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] QuestionCreateDTO dto)
         {
             await _questionService.UpdateAsync(id, dto);
@@ -51,6 +55,7 @@ namespace Exam.API.Controllers
         }
 
         [HttpDelete("Delete/{id:int}")]
+        [Authorize(Roles = "Instructor,Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             await _questionService.DeleteAsync(id);
@@ -58,6 +63,7 @@ namespace Exam.API.Controllers
         }
 
         [HttpPost("with-choices")]
+        [Authorize(Roles = "Instructor,Admin")]
         public async Task<IActionResult> AddQuestionWithChoices([FromBody] QuestionWithChoicesDTO dto)
         {
             var id = await _questionService.AddQuestionWithChoicesAsync(dto);

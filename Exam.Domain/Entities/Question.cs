@@ -22,8 +22,9 @@ namespace Exam.Domain.Entities
         public HashSet<Choice> Choices { get; set; } = new();
         // اختيارات السؤال (تستخدم فقط في MCQ و True/False)
 
-        public HashSet<ExamQuestion> ExamQuestions { get; set; } = new();
-        // الامتحانات التي تحتوي على هذا السؤال
+        public int ExamId { get; set; }
+        public Exam Exam { get; set; }
+        // السؤال ينتمي لامتحان واحد محدد
 
         public int Grade { get; set; }
         // درجة السؤال (تستخدم في حساب النتيجة)

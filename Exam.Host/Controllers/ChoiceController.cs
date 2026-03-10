@@ -1,11 +1,13 @@
 using Exam.Application.Dto.Choice;
 using Exam.Application.Services.Interfaces.IChoiceServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Exam.API.Controllers
 {
     [ApiController]
     [Route("api/choices")]
+    [Authorize]
     public class ChoiceController : ControllerBase
     {
         private readonly IChoiceService _choiceService;
@@ -30,6 +32,7 @@ namespace Exam.API.Controllers
         }
 
         [HttpPost("Create/{questionId:int}")]
+        [Authorize(Roles = "Instructor,Admin")]
         public async Task<IActionResult> Create(int questionId, [FromBody] ChoiceCreateDTO dto)
         {
             await _choiceService.CreateAsync(questionId, dto);
@@ -37,6 +40,7 @@ namespace Exam.API.Controllers
         }
 
         [HttpPost("AddRange/{questionId:int}")]
+        [Authorize(Roles = "Instructor,Admin")]
         public async Task<IActionResult> AddRange(int questionId, [FromBody] IEnumerable<ChoiceCreateDTO> choices)
         {
             await _choiceService.AddRangeAsync(questionId, choices);
@@ -44,6 +48,7 @@ namespace Exam.API.Controllers
         }
 
         [HttpPut("Update/{id:int}")]
+        [Authorize(Roles = "Instructor,Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] ChoiceCreateDTO dto)
         {
             await _choiceService.UpdateAsync(id, dto);
@@ -51,6 +56,7 @@ namespace Exam.API.Controllers
         }
 
         [HttpDelete("Delete/{id:int}")]
+        [Authorize(Roles = "Instructor,Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             await _choiceService.DeleteAsync(id);
@@ -58,6 +64,7 @@ namespace Exam.API.Controllers
         }
 
         [HttpDelete("DeleteRange")]
+        [Authorize(Roles = "Instructor,Admin")]
         public async Task<IActionResult> DeleteRange([FromBody] IEnumerable<int> ids)
         {
             await _choiceService.DeleteRangeAsync(ids);

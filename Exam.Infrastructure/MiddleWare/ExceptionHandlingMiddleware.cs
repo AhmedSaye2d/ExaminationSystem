@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
@@ -36,26 +36,30 @@ namespace Exam.Infrastructure.Middleware
                     ex.Message
                 );
             }
+            catch (ArgumentException ex)
+            {
+                await HandleExceptionAsync(
+                    context,
+                    StatusCodes.Status400BadRequest,
+                    ex.Message
+                );
+            }
 
-            // ==============================
-            // Database Update Errors
-            // ==============================
+          
             catch (DbUpdateException ex)
             {
                 _logger.LogError(ex, "Database update error occurred.");
                 await HandleDbExceptionAsync(context, ex);
             }
 
-            // ==============================
-            // General Errors
-            // ==============================
+         
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An unexpected error occurred: {Message}", ex.Message);
                 await HandleExceptionAsync(
                     context,
                     StatusCodes.Status500InternalServerError,
-                    $"Internal Server Error: {ex.GetType().Name} - {ex.Message}"
+                    "An unexpected error occurred. Please try again later."
                 );
             }
         }

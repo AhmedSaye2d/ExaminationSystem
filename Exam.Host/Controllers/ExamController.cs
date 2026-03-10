@@ -1,11 +1,14 @@
 using Exam.Application.Dto.Exam;
 using Exam.Application.Services.Interfaces.IExamServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Exam.API.Controllers
 {
     [ApiController]
     [Route("api/exams")]
+    [Authorize]
     public class ExamsController : ControllerBase
     {
         private readonly IExamService _examService;
@@ -16,9 +19,19 @@ namespace Exam.API.Controllers
         }
 
         [HttpGet("GetAll")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAll()
         {
             var res = await _examService.GetAllAsync();
+            return Ok(res);
+        }
+
+        [HttpGet("my-exams")]
+        [Authorize(Roles = "Instructor")]
+        public async Task<IActionResult> GetMyExams()
+        {
+            var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var res = await _examService.GetInstructorExamsAsync(instructorId);
             return Ok(res);
         }
 
@@ -29,39 +42,42 @@ namespace Exam.API.Controllers
             return Ok(res);
         }
 
+        [HttpGet("stats/{id:int}")]
+        [Authorize(Roles = "Instructor,Admin")]
+        public async Task<IActionResult> GetExamStats(int id)
+        {
+            var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var res = await _examService.GetExamStatsAsync(id, instructorId);
+            return Ok(res);
+        }
+
         [HttpPost("Create")]
+        [Authorize(Roles = "Instructor,Admin")]
         public async Task<IActionResult> Create([FromBody] ExamCreateDTO dto)
         {
+            var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            dto.InstructorId = instructorId;
+
             await _examService.CreateAsync(dto);
             return Ok(new { message = "Exam created successfully" });
         }
 
         [HttpPut("Update/{id:int}")]
+        [Authorize(Roles = "Instructor,Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] ExamCreateDTO dto)
         {
-            await _examService.UpdateAsync(id, dto);
+            var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            await _examService.UpdateAsync(id, dto, instructorId);
             return Ok(new { message = "Exam updated successfully" });
         }
 
         [HttpDelete("Delete/{id:int}")]
+        [Authorize(Roles = "Instructor,Admin")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _examService.DeleteAsync(id);
+            var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            await _examService.DeleteAsync(id, instructorId);
             return Ok(new { message = "Exam deleted successfully" });
-        }
-
-        [HttpPost("{id:int}/questions")]
-        public async Task<IActionResult> AddQuestionsToExam(int id, [FromBody] IEnumerable<int> questionIds)
-        {
-            await _examService.AddQuestionsToExamAsync(id, questionIds);
-            return Ok(new { message = "Questions added to exam successfully" });
-        }
-
-        [HttpDelete("{examId:int}/questions/{questionId:int}")]
-        public async Task<IActionResult> RemoveQuestionFromExam(int examId, int questionId)
-        {
-            await _examService.RemoveQuestionFromExamAsync(examId, questionId);
-            return Ok(new { message = "Question removed from exam successfully" });
         }
     }
 }

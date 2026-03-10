@@ -30,6 +30,12 @@ namespace Exam.Infrastructure.Data.Configurations
                 .HasForeignKey(c => c.QuestionId)
                 .OnDelete(DeleteBehavior.Cascade);
             // كل سؤال له عدة اختيارات
+
+            builder.HasOne(q => q.Exam)
+                .WithMany(e => e.Questions)
+                .HasForeignKey(q => q.ExamId)
+                .OnDelete(DeleteBehavior.Cascade);
+            // كل سؤال ينتمي لامتحان واحد
         }
     }
 }

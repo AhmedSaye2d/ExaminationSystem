@@ -18,6 +18,8 @@ builder.Services.AddApplicationService();
 
 var app = builder.Build();
 
+app.UseInfrastructure();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -29,7 +31,6 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseInfrastructure();
 
 // Seed Database
 using (var scope = app.Services.CreateScope())

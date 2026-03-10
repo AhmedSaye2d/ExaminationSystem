@@ -47,7 +47,9 @@ namespace Exam.Application.Mapping
             // =======================
             // Student Mapping
             // =======================
-            CreateMap<Student, StudentDTO>();
+            CreateMap<Student, StudentDTO>()
+                .ForMember(dest => dest.EnrolledCourses, 
+                           opt => opt.MapFrom(src => src.CourseStudents.Select(cs => cs.Course)));
             CreateMap<StudentCreateDTO, Student>();
             CreateMap<StudentUpdateDTO, Student>();
 
@@ -66,9 +68,23 @@ namespace Exam.Application.Mapping
                 .ForMember(dest => dest.Type,
                            opt => opt.MapFrom(src => src.Type))
 
-                // Choices هتتضاف لاحقاً
+                // Choices يتم تحويلها تلقائياً بالاعتماد على ماب ChoiceCreateDTO
+                .ForMember(dest => dest.Choices, opt => opt.MapFrom(src => src.Choices))
+                .ForMember(dest => dest.Exam, opt => opt.Ignore());
+
+            CreateMap<Question, QuestionDTO>();
+
+            CreateMap<Question, QuestionReadDTO>();
+
+            CreateMap<Question, QuestionForExamDTO>();
+
+            CreateMap<QuestionUpdateDTO, Question>()
                 .ForMember(dest => dest.Choices, opt => opt.Ignore())
-                .ForMember(dest => dest.ExamQuestions, opt => opt.Ignore());
+                .ForMember(dest => dest.Exam, opt => opt.Ignore());
+
+            CreateMap<QuestionWithChoicesDTO, Question>()
+                .ForMember(dest => dest.Choices, opt => opt.MapFrom(src => src.Choices))
+                .ForMember(dest => dest.Exam, opt => opt.Ignore());
 
 
             // =======================
@@ -84,6 +100,20 @@ namespace Exam.Application.Mapping
                            opt => opt.MapFrom(src => src.IsCorrect))
 
                 // السؤال بيتحدد في السيرفس مش من الـ DTO
+                .ForMember(dest => dest.QuestionId, opt => opt.Ignore())
+                .ForMember(dest => dest.Question, opt => opt.Ignore());
+
+            CreateMap<Choice, ChoiceDTO>()
+                .ForMember(dest => dest.IsCorrect, opt => opt.MapFrom(src => src.IsCorrectAnswer));
+
+            CreateMap<Choice, ChoiceReadDTO>()
+                .ForMember(dest => dest.IsCorrect, opt => opt.MapFrom(src => src.IsCorrectAnswer))
+                .ForMember(dest => dest.QuestionID, opt => opt.MapFrom(src => src.QuestionId));
+
+            CreateMap<Choice, Dto.Choice.ChoiceForStudentDTO>();
+
+            CreateMap<ChoiceUpdateDTO, Choice>()
+                .ForMember(dest => dest.IsCorrectAnswer, opt => opt.MapFrom(src => src.IsCorrect))
                 .ForMember(dest => dest.QuestionId, opt => opt.Ignore())
                 .ForMember(dest => dest.Question, opt => opt.Ignore());
 
@@ -115,8 +145,20 @@ namespace Exam.Application.Mapping
                 // علاقات تتحدد في الـ Service
                 .ForMember(dest => dest.CourseID, opt => opt.MapFrom(src => src.CourseId))
                 .ForMember(dest => dest.InstructorID, opt => opt.MapFrom(src => src.InstructorId))
-                .ForMember(dest => dest.ExamQuestions, opt => opt.Ignore())
+                .ForMember(dest => dest.Questions, opt => opt.Ignore())
                 .ForMember(dest => dest.ExamStudents, opt => opt.Ignore());
+
+            CreateMap<global::Exam.Domain.Entities.Exam, ExamDTOs.ExamDTO>()
+                .ForMember(dest => dest.CourseId, opt => opt.MapFrom(src => src.CourseID))
+                .ForMember(dest => dest.InstructorId, opt => opt.MapFrom(src => src.InstructorID));
+
+            // =======================
+            // Exam Result Mapping
+            // =======================
+            CreateMap<ExamStudent, Dto.SubmitExam.ExamResultDTO>()
+                .ForMember(dest => dest.ExamName, opt => opt.MapFrom(src => src.Exam.Name))
+                .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student.FullName))
+                .ForMember(dest => dest.TotalGrade, opt => opt.MapFrom(src => src.Exam.TotalGrade));
         }
     }
 }

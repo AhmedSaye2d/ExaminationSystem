@@ -20,7 +20,6 @@ namespace Exam.Infrastructure.Data
         public DbSet<Department> Departments { get; set; }
         public DbSet<Exam.Domain.Entities.Exam> Exams { get; set; }
         public DbSet<ExamAnswer> ExamAnswers { get; set; }
-        public DbSet<ExamQuestion> ExamQuestions { get; set; }
         public DbSet<ExamResult> ExamResults { get; set; }
         public DbSet<ExamStudent> ExamStudents { get; set; }
         public DbSet<Instructor> Instructors { get; set; }

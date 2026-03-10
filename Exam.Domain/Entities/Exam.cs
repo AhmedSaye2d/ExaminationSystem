@@ -21,8 +21,9 @@ namespace Exam.Domain.Entities
         public Instructor Instructor { get; set; }
 
         public ExamSettings Settings { get; set; }
-        public HashSet<ExamQuestion> ExamQuestions { get; set; }
+        public List<Question> Questions { get; set; } = new();
         public List<ExamStudent> ExamStudents { get; set; }
         public int TotalGrade { get; set; }
+        public bool IsPublished { get; set; } = false;
     }
 }

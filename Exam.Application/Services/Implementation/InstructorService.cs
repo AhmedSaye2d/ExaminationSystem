@@ -7,6 +7,10 @@ using Exam.Domain;
 using Exam.Domain.Entities;
 using Exam.Domain.Enum;
 using Exam.Domain.Interface;
+using Exam.Domain.Entities.Identity;
+using Microsoft.AspNetCore.Identity;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Exam.Application.Services.Implementation
 {
@@ -14,11 +18,13 @@ namespace Exam.Application.Services.Implementation
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly UserManager<AppUser> _userManager;
 
-        public InstructorService(IUnitOfWork unitOfWork, IMapper mapper)
+        public InstructorService(IUnitOfWork unitOfWork, IMapper mapper, UserManager<AppUser> userManager)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _userManager = userManager;
         }
 
         // ================================
@@ -55,13 +61,29 @@ namespace Exam.Application.Services.Implementation
             if (!departmentExists)
                 throw new ItemNotFoundException("Department not found");
 
+            // Check if user already exists
+            var existingUser = await _userManager.FindByEmailAsync(dto.Email);
+            if (existingUser != null)
+                return ServiceResponse.Fail("Email is already in use");
+
             var instructor = _mapper.Map<Instructor>(dto);
 
+            instructor.UserName = dto.Email;
             instructor.HireDate = dto.HireDate ?? DateTime.UtcNow;
             instructor.UserType = UserType.Instructor;
+            instructor.IsActive = true;
+            instructor.IsDeleted = false;
 
-            await _unitOfWork.Repository<Instructor>().AddAsync(instructor);
-            await _unitOfWork.CompleteAsync();
+            // Use Identity UserManager
+            var result = await _userManager.CreateAsync(instructor, dto.Password);
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                return ServiceResponse.Fail(errors);
+            }
+
+            // Assign to Instructor Role
+            await _userManager.AddToRoleAsync(instructor, UserType.Instructor.ToString());
 
             return ServiceResponse.Ok("Instructor created successfully");
         }

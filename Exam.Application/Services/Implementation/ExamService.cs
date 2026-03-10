@@ -27,16 +27,51 @@ namespace Exam.Application.Services.Implementation
             return _mapper.Map<IEnumerable<ExamDTO>>(exams);
         }
 
+        public async Task<IEnumerable<ExamDTO>> GetInstructorExamsAsync(int instructorId)
+        {
+            var exams = await _unitOfWork
+                .Repository<Domain.Entities.Exam>()
+                .FindAsync(e => e.InstructorID == instructorId && !e.IsDeleted);
+
+            return _mapper.Map<IEnumerable<ExamDTO>>(exams);
+        }
+
         public async Task<ExamDTO> GetByIdAsync(int id)
         {
             var exam = await _unitOfWork
                 .Repository<Domain.Entities.Exam>()
                 .GetByIdAsync(id);
 
-            if (exam == null)
+            if (exam == null || exam.IsDeleted)
                 throw new ItemNotFoundException("Exam not found");
 
             return _mapper.Map<ExamDTO>(exam);
+        }
+
+        public async Task<ExamStatsDTO> GetExamStatsAsync(int examId, int instructorId)
+        {
+            var exam = await _unitOfWork.Repository<Domain.Entities.Exam>().GetByIdAsync(examId);
+            
+            if (exam == null || exam.IsDeleted)
+                throw new ItemNotFoundException("Exam not found");
+
+            // Security check: Only the owner or admin can see stats
+            if (exam.InstructorID != instructorId)
+                throw new UnauthorizedAccessException("You are not authorized to view stats for this exam");
+
+            var enrollments = await _unitOfWork.Repository<ExamStudent>()
+                .FindAsync(es => es.ExamId == examId);
+
+            return new ExamStatsDTO
+            {
+                ExamId = exam.Id,
+                ExamTitle = exam.Name,
+                TotalStudents = enrollments.Count(),
+                SubmittedCount = enrollments.Count(es => es.IsSubmitted),
+                AverageScore = enrollments.Any(es => es.IsSubmitted) 
+                    ? enrollments.Where(es => es.IsSubmitted).Average(es => es.Score) 
+                    : 0
+            };
         }
 
         public async Task CreateAsync(ExamCreateDTO dto)
@@ -60,13 +95,17 @@ namespace Exam.Application.Services.Implementation
             await _unitOfWork.CompleteAsync();
         }
 
-        public async Task UpdateAsync(int id, ExamCreateDTO dto)
+        public async Task UpdateAsync(int id, ExamCreateDTO dto, int instructorId)
         {
             var examRepo = _unitOfWork.Repository<Domain.Entities.Exam>();
 
             var exam = await examRepo.GetByIdAsync(id);
-            if (exam == null)
+            if (exam == null || exam.IsDeleted)
                 throw new ItemNotFoundException("Exam not found");
+
+            // Check Ownership
+            if (exam.InstructorID != instructorId)
+                throw new UnauthorizedAccessException("You can only update your own exams");
 
             _mapper.Map(dto, exam);
 
@@ -75,101 +114,21 @@ namespace Exam.Application.Services.Implementation
             await _unitOfWork.CompleteAsync();
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task DeleteAsync(int id, int instructorId)
         {
             var examRepo = _unitOfWork.Repository<Domain.Entities.Exam>();
 
             var exam = await examRepo.GetByIdAsync(id);
-            if (exam == null)
+            if (exam == null || exam.IsDeleted)
                 throw new ItemNotFoundException("Exam not found");
 
-            await examRepo.DeleteAsync(id);
+            // Check Ownership
+            if (exam.InstructorID != instructorId)
+                throw new UnauthorizedAccessException("You can only delete your own exams");
 
-            await _unitOfWork.CompleteAsync();
-        }
-
-        public async Task AddQuestionsToExamAsync(int examId, IEnumerable<int> questionIds)
-        {
-            if (questionIds == null || !questionIds.Any())
-                throw new ArgumentException("No questions provided");
-
-            var examRepo = _unitOfWork.Repository<Domain.Entities.Exam>();
-            var questionRepo = _unitOfWork.Repository<Question>();
-            var examQuestionRepo = _unitOfWork.Repository<ExamQuestion>();
-
-            var exam = await examRepo.GetByIdAsync(examId);
-            if (exam == null)
-                throw new ItemNotFoundException("Exam not found");
-
-            var questions = await questionRepo
-                .FindAsync(q => questionIds.Contains(q.Id));
-
-            if (!questions.Any())
-                throw new ItemNotFoundException("No valid questions found");
-
-            var existingExamQuestions = await examQuestionRepo
-                .FindAsync(eq => eq.ExamId == examId);
-
-            var existingQuestionIds = existingExamQuestions
-                .Select(eq => eq.QuestionId)
-                .ToHashSet();
-
-            int addedCount = 0;
-
-            foreach (var question in questions)
-            {
-                if (existingQuestionIds.Contains(question.Id))
-                    continue;
-
-                await examQuestionRepo.AddAsync(new ExamQuestion
-                {
-                    ExamId = examId,
-                    QuestionId = question.Id,
-                    Points = question.Grade
-                });
-
-                addedCount++;
-            }
-
-            if (addedCount == 0)
-                throw new ArgumentException("All questions already added to exam");
-
-            // إعادة حساب الدرجة
-            var examQuestions = await _unitOfWork.Repository<ExamQuestion>()
-                .FindAsync(x => x.ExamId == examId);
-
-            var examQuestionList = examQuestions.ToList();
-
-            var questionIdsInExam = examQuestionList.Select(q => q.QuestionId).ToList();
-
-            exam.TotalGrade = examQuestionList.Sum(eq => eq.Points); // Use the ToList() result here
-
+            exam.IsDeleted = true;
             await examRepo.UpdateAsync(exam);
 
-            var result = await _unitOfWork.CompleteAsync();
-
-            if (result <= 0)
-                throw new Exception("Failed to add questions");
-        }
-
-        public async Task RemoveQuestionFromExamAsync(int examId, int questionId)
-        {
-            var examRepo = _unitOfWork.Repository<Domain.Entities.Exam>();
-            var examQuestionRepo = _unitOfWork.Repository<ExamQuestion>();
-
-            var exam = await examRepo.GetByIdAsync(examId)
-                       ?? throw new ItemNotFoundException("Exam not found");
-
-            var examQuestions = await examQuestionRepo.FindAsync(eq => eq.ExamId == examId && eq.QuestionId == questionId);
-            var examQuestion = examQuestions.FirstOrDefault()
-                               ?? throw new ItemNotFoundException("Question not found in this exam");
-
-            await examQuestionRepo.DeleteAsync(examQuestion.Id);
-
-            exam.TotalGrade -= examQuestion.Points;
-            if (exam.TotalGrade < 0) exam.TotalGrade = 0;
-
-            await examRepo.UpdateAsync(exam);
             await _unitOfWork.CompleteAsync();
         }
     }

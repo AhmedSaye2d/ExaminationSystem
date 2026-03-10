@@ -29,7 +29,7 @@ public class QuestionService : IQuestionService
             .GetPagedAsync(
                 page, 
                 pageSize, 
-                predicate: courseId.HasValue ? q => q.ExamQuestions.Any(eq => eq.Exam.CourseID == courseId.Value) : null
+                predicate: courseId.HasValue ? q => q.Exam.CourseID == courseId.Value : null
             );
             
         return (_mapper.Map<IEnumerable<QuestionDTO>>(items), totalCount);
@@ -46,7 +46,6 @@ public class QuestionService : IQuestionService
     public async Task CreateAsync(QuestionCreateDTO dto)
     {
         var question = _mapper.Map<Question>(dto);
-
         await _unitOfWork.Repository<Question>().AddAsync(question);
         await _unitOfWork.CompleteAsync();
     }
@@ -59,28 +58,9 @@ public class QuestionService : IQuestionService
         if (dto.Choices.Count(c => c.IsCorrect) != 1)
             throw new ArgumentException("There must be exactly one correct answer");
 
-        var question = new Question
-        {
-            Text = dto.Text,
-            Grade = dto.Grade,
-            Type = dto.Type
-        };
+        var question = _mapper.Map<Question>(dto);
 
-        var questionRepo = _unitOfWork.Repository<Question>();
-        var choiceRepo = _unitOfWork.Repository<Choice>();
-
-        await questionRepo.AddAsync(question);
-
-        foreach (var choiceDto in dto.Choices)
-        {
-            await choiceRepo.AddAsync(new Choice
-            {
-                Text = choiceDto.Text,
-                IsCorrectAnswer = choiceDto.IsCorrect,
-                QuestionId = question.Id
-            });
-        }
-
+        await _unitOfWork.Repository<Question>().AddAsync(question);
         await _unitOfWork.CompleteAsync();
 
         return question.Id;

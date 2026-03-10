@@ -30,6 +30,7 @@ namespace Exam.Application.DependencyInjection
             services.AddScoped<IInstructorService, InstructorService>();
             services.AddScoped<IStudentService, StudentService>();
             services.AddScoped<IStudentExamService, StudentExamService>();
+            services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 
             return services;
 

@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
+using Exam.Application.Dto.Course;
 using Exam.Domain.Enum;
 
 namespace Exam.Application.Dto.Student
@@ -16,5 +13,6 @@ namespace Exam.Application.Dto.Student
         public Gender Gender { get; set; }
         public double GPA { get; set; }
         public int MajorId { get; set; }
+        public List<CourseDTO> EnrolledCourses { get; set; } = new();
     }
 }

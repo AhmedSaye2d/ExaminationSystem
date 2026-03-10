@@ -1,5 +1,6 @@
 using Exam.Application.Dto.Department;
 using Exam.Application.Services.Interfaces.IDepartmentServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Exam.API.Controllers
@@ -29,6 +30,7 @@ namespace Exam.API.Controllers
             return Ok(res);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("Create")]
         public async Task<IActionResult> Create([FromBody] DepartmentCreateDTO dto)
         {
@@ -36,6 +38,7 @@ namespace Exam.API.Controllers
             return Ok(new { message = "Department created successfully" });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("Update/{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] DepartmentCreateDTO dto)
         {
@@ -43,6 +46,7 @@ namespace Exam.API.Controllers
             return Ok(new { message = "Department updated successfully" });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("Delete/{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {

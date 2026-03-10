@@ -3,6 +3,7 @@ namespace Exam.Application.Dto.Question
 {
     public class QuestionCreateDTO
     {
+        public int ExamId { get; set; }
         public string Text { get; set; } = string.Empty;
         // نص السؤال
 

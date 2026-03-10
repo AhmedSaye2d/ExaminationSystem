@@ -1,0 +1,5 @@
+﻿Build started...
+Build succeeded.
+Removing migration '20260308002203_InitialCreate'.
+Removing model snapshot.
+Done.

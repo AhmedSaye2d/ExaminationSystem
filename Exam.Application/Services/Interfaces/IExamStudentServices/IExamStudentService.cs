@@ -4,7 +4,7 @@
     {
         Task<int> StartExamAsync(int examId, int studentId);
 
-        Task SaveAnswerAsync(int examStudentId, int examQuestionId, int choiceId);
+        Task SaveAnswerAsync(int examStudentId, int questionId, int choiceId);
 
         Task SubmitExamAsync(int examStudentId);
 

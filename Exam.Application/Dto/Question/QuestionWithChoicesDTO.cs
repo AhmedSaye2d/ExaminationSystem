@@ -10,6 +10,7 @@ namespace Exam.Application.Dto.Question
 {
     public class QuestionWithChoicesDTO
     {
+        public int ExamId { get; set; }
         public string Text { get; set; } = string.Empty;
 
         public int Grade { get; set; }

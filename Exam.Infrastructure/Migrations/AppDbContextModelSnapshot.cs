@@ -280,14 +280,14 @@ namespace Exam.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("ExamQuestionId")
-                        .HasColumnType("int");
-
                     b.Property<int>("ExamStudentId")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -299,49 +299,11 @@ namespace Exam.Infrastructure.Migrations
 
                     b.HasIndex("ChoiceId");
 
-                    b.HasIndex("ExamQuestionId");
-
                     b.HasIndex("ExamStudentId");
-
-                    b.ToTable("ExamAnswers");
-                });
-
-            modelBuilder.Entity("Exam.Domain.Entities.ExamQuestion", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ExamId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("Order")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Points")
-                        .HasColumnType("int");
-
-                    b.Property<int>("QuestionId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExamId");
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("ExamQuestions");
+                    b.ToTable("ExamAnswers");
                 });
 
             modelBuilder.Entity("Exam.Domain.Entities.ExamResult", b =>
@@ -589,6 +551,9 @@ namespace Exam.Infrastructure.Migrations
                     b.Property<int>("DifficultyLevel")
                         .HasColumnType("int");
 
+                    b.Property<int>("ExamId")
+                        .HasColumnType("int");
+
                     b.Property<int>("Grade")
                         .HasColumnType("int");
 
@@ -607,6 +572,8 @@ namespace Exam.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ExamId");
 
                     b.ToTable("Questions");
                 });
@@ -891,13 +858,7 @@ namespace Exam.Infrastructure.Migrations
                     b.HasOne("Exam.Domain.Entities.Choice", "Choice")
                         .WithMany()
                         .HasForeignKey("ChoiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Exam.Domain.Entities.ExamQuestion", "ExamQuestion")
-                        .WithMany()
-                        .HasForeignKey("ExamQuestionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("Exam.Domain.Entities.ExamStudent", "ExamStudent")
@@ -906,28 +867,15 @@ namespace Exam.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Exam.Domain.Entities.Question", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Choice");
 
-                    b.Navigation("ExamQuestion");
-
                     b.Navigation("ExamStudent");
-                });
-
-            modelBuilder.Entity("Exam.Domain.Entities.ExamQuestion", b =>
-                {
-                    b.HasOne("Exam.Domain.Entities.Exam", "Exam")
-                        .WithMany("ExamQuestions")
-                        .HasForeignKey("ExamId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Exam.Domain.Entities.Question", "Question")
-                        .WithMany("ExamQuestions")
-                        .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Exam");
 
                     b.Navigation("Question");
                 });
@@ -971,6 +919,17 @@ namespace Exam.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Exam.Domain.Entities.Question", b =>
+                {
+                    b.HasOne("Exam.Domain.Entities.Exam", "Exam")
+                        .WithMany("Questions")
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Exam");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -1066,9 +1025,9 @@ namespace Exam.Infrastructure.Migrations
 
             modelBuilder.Entity("Exam.Domain.Entities.Exam", b =>
                 {
-                    b.Navigation("ExamQuestions");
-
                     b.Navigation("ExamStudents");
+
+                    b.Navigation("Questions");
                 });
 
             modelBuilder.Entity("Exam.Domain.Entities.ExamStudent", b =>
@@ -1084,8 +1043,6 @@ namespace Exam.Infrastructure.Migrations
             modelBuilder.Entity("Exam.Domain.Entities.Question", b =>
                 {
                     b.Navigation("Choices");
-
-                    b.Navigation("ExamQuestions");
                 });
 
             modelBuilder.Entity("Exam.Domain.Entities.Instructor", b =>

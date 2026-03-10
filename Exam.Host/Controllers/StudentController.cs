@@ -1,7 +1,9 @@
 ﻿using Exam.Application.Dto.Student;
 using Exam.Application.Dto.Course;
 using Exam.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Exam.API.Controllers
 {
@@ -16,6 +18,7 @@ namespace Exam.API.Controllers
             _studentService = studentService;
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpGet("GetAll")]
         public async Task<IActionResult> GetAll()
         {
@@ -23,6 +26,7 @@ namespace Exam.API.Controllers
             return Ok(res);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpGet("GetById/{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -30,6 +34,7 @@ namespace Exam.API.Controllers
             return Ok(res);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("Create")]
         public async Task<IActionResult> Create([FromBody] StudentCreateDTO dto)
         {
@@ -37,6 +42,7 @@ namespace Exam.API.Controllers
             return res.Success ? Ok(res) : BadRequest(res);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("Update/{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] StudentUpdateDTO dto)
         {
@@ -44,6 +50,7 @@ namespace Exam.API.Controllers
             return res.Success ? Ok(res) : BadRequest(res);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("Delete/{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -51,10 +58,39 @@ namespace Exam.API.Controllers
             return res.Success ? Ok(res) : BadRequest(res);
         }
 
-        [HttpGet("{id:int}/courses")]
-        public async Task<IActionResult> GetStudentCourses(int id)
+        [Authorize]
+        [HttpGet("my-courses")]
+        public async Task<IActionResult> GetMyCourses()
         {
-            var res = await _studentService.GetStudentCoursesAsync(id);
+            var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var res = await _studentService.GetStudentCoursesAsync(studentId);
+            return Ok(res);
+        }
+
+        [Authorize]
+        [HttpPost("enroll")]
+        public async Task<IActionResult> EnrollInCourse([FromQuery] int courseId)
+        {
+            var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var res = await _studentService.EnrollCourseAsync(studentId, courseId);
+            return res.Success ? Ok(res) : BadRequest(res);
+        }
+
+        [Authorize(Roles = "Student")]
+        [HttpGet("my-exams")]
+        public async Task<IActionResult> GetMyExams()
+        {
+            var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var res = await _studentService.GetStudentExamsAsync(studentId);
+            return Ok(res);
+        }
+
+        [Authorize(Roles = "Student")]
+        [HttpGet("my-results")]
+        public async Task<IActionResult> GetMyResults()
+        {
+            var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var res = await _studentService.GetStudentResultsAsync(studentId);
             return Ok(res);
         }
     }

@@ -5,13 +5,12 @@ namespace Exam.Application.Services.Interfaces.IExamServices
     public interface IExamService
     {
         Task<IEnumerable<ExamDTO>> GetAllAsync();
+        Task<IEnumerable<ExamDTO>> GetInstructorExamsAsync(int instructorId);
         Task<ExamDTO> GetByIdAsync(int id);
+        Task<ExamStatsDTO> GetExamStatsAsync(int examId, int instructorId);
 
         Task CreateAsync(ExamCreateDTO dto);
-        Task UpdateAsync(int id, ExamCreateDTO dto);
-        Task DeleteAsync(int id);
-
-        Task AddQuestionsToExamAsync(int examId, IEnumerable<int> questionIds);
-        Task RemoveQuestionFromExamAsync(int examId, int questionId);
+        Task UpdateAsync(int id, ExamCreateDTO dto, int instructorId);
+        Task DeleteAsync(int id, int instructorId);
     }
 }

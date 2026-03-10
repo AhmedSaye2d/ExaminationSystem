@@ -13,8 +13,8 @@ namespace Exam.Domain.Entities
         public int ExamStudentId { get; set; }
         public ExamStudent? ExamStudent { get; set; }
 
-        public int ExamQuestionId { get; set; }
-        public ExamQuestion? ExamQuestion { get; set; }
+        public int QuestionId { get; set; }
+        public Question? Question { get; set; }
 
         public int ChoiceId { get; set; } // nullable لو سؤال مقالي
         public Choice? Choice { get; set; }

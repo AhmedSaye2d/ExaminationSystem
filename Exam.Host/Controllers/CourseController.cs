@@ -1,5 +1,6 @@
 using Exam.Application.Dto.Course;
 using Exam.Application.Services.Interfaces.ICourseService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Exam.API.Controllers
@@ -29,6 +30,7 @@ namespace Exam.API.Controllers
             return Ok(res);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("Create")]
         public async Task<IActionResult> Create([FromBody] CourseCreateDTO dto)
         {
@@ -36,6 +38,7 @@ namespace Exam.API.Controllers
             return Ok(new { message = "Course created successfully" });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("Update/{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] CourseCreateDTO dto)
         {
@@ -43,6 +46,7 @@ namespace Exam.API.Controllers
             return Ok(new { message = "Course updated successfully" });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("Delete/{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -57,6 +61,7 @@ namespace Exam.API.Controllers
             return Ok(exams);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("{courseId:int}/assign-instructor")]
         public async Task<IActionResult> AssignInstructor(int courseId, [FromQuery] int instructorId)
         {

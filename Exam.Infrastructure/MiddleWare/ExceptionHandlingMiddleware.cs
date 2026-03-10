@@ -38,6 +38,30 @@ namespace Exam.Infrastructure.Middleware
             }
 
             // ==============================
+            // Bad Request Errors
+            // ==============================
+            catch (ArgumentException ex)
+            {
+                await HandleExceptionAsync(
+                    context,
+                    StatusCodes.Status400BadRequest,
+                    ex.Message
+                );
+            }
+
+            // ==============================
+            // Security Errors
+            // ==============================
+            catch (UnauthorizedAccessException)
+            {
+                await HandleExceptionAsync(
+                    context,
+                    StatusCodes.Status401Unauthorized,
+                    "Access denied"
+                );
+            }
+
+            // ==============================
             // Database Update Errors
             // ==============================
             catch (DbUpdateException ex)

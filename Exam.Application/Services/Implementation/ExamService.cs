@@ -80,10 +80,16 @@ namespace Exam.Application.Services.Implementation
             var examRepo = _unitOfWork.Repository<Domain.Entities.Exam>();
 
             var exam = await examRepo.GetByIdAsync(id);
-            if (exam == null)
+            if (exam == null || exam.IsDeleted)
                 throw new ItemNotFoundException("Exam not found");
 
-            await examRepo.DeleteAsync(id);
+            // Check if there are student attempts
+            var attempts = await _unitOfWork.Repository<ExamStudent>().FindAsync(x => x.ExamId == id && !x.IsDeleted);
+            if (attempts.Any())
+                throw new ArgumentException("Cannot delete exam with student attempts");
+
+            exam.IsDeleted = true;
+            await examRepo.UpdateAsync(exam);
 
             await _unitOfWork.CompleteAsync();
         }

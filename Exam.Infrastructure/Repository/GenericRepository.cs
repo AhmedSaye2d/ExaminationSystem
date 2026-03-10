@@ -26,7 +26,7 @@ namespace Exam.Infrastructure.Repository
             IQueryable<TEntity> query = _dbSet;
 
             // 🔥 فلترة Soft Delete تلقائيًا
-            if (typeof(BaseEntity).IsAssignableFrom(typeof(TEntity)))
+            if (typeof(BaseEntity).IsAssignableFrom(typeof(TEntity)) || typeof(Exam.Domain.Entities.Identity.AppUser).IsAssignableFrom(typeof(TEntity)))
             {
                 query = query.Where(e => !EF.Property<bool>(e, "IsDeleted"));
             }
@@ -61,7 +61,7 @@ namespace Exam.Infrastructure.Repository
             IQueryable<TEntity> query = _dbSet;
 
             // 🔥 Soft Delete
-            if (typeof(BaseEntity).IsAssignableFrom(typeof(TEntity)))
+            if (typeof(BaseEntity).IsAssignableFrom(typeof(TEntity)) || typeof(Exam.Domain.Entities.Identity.AppUser).IsAssignableFrom(typeof(TEntity)))
             {
                 query = query.Where(e => !EF.Property<bool>(e, "IsDeleted"));
             }
@@ -138,8 +138,8 @@ namespace Exam.Infrastructure.Repository
         {
             IQueryable<TEntity> query = _dbSet;
 
-            // 🔥 Soft Delete filter
-            if (typeof(BaseEntity).IsAssignableFrom(typeof(TEntity)))
+            // 🔥 فلترة Soft Delete تلقائيًا
+            if (typeof(BaseEntity).IsAssignableFrom(typeof(TEntity)) || typeof(Exam.Domain.Entities.Identity.AppUser).IsAssignableFrom(typeof(TEntity)))
             {
                 query = query.Where(e => !EF.Property<bool>(e, "IsDeleted"));
             }

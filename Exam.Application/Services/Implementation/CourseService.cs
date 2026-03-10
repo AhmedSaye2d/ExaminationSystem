@@ -89,10 +89,21 @@ namespace Exam.Application.Services.Implementation
         {
             var courseRepo = _unitOfWork.Repository<Course>();
             var course = await courseRepo.GetByIdAsync(id);
-            if (course == null)
+            if (course == null || course.IsDeleted)
                 throw new ItemNotFoundException("Course not found");
 
-            await courseRepo.DeleteAsync(id);
+            // Check for existing exams
+            var exams = await _unitOfWork.Repository<Domain.Entities.Exam>().FindAsync(e => e.CourseID == id && !e.IsDeleted);
+            if (exams.Any())
+                throw new ArgumentException("Cannot delete course with active exams");
+
+            // Check for student enrollments
+            var enrollments = await _unitOfWork.Repository<CourseStudent>().FindAsync(cs => cs.CourseId == id);
+            if (enrollments.Any())
+                throw new ArgumentException("Cannot delete course with enrolled students");
+
+            course.IsDeleted = true;
+            await courseRepo.UpdateAsync(course);
             await _unitOfWork.CompleteAsync();
         }
 
@@ -110,11 +121,11 @@ namespace Exam.Application.Services.Implementation
             var instructorRepo = _unitOfWork.Repository<Instructor>();
             var courseInstructorRepo = _unitOfWork.Repository<CourseInstructor>();
 
-            var course = await courseRepo.GetByIdAsync(courseId)
-                         ?? throw new ItemNotFoundException("Course not found");
+            var courseExists = await courseRepo.ExistsAsync(courseId);
+            if (!courseExists) throw new ItemNotFoundException("Course not found");
 
-            var instructor = await instructorRepo.GetByIdAsync(instructorId)
-                             ?? throw new ItemNotFoundException("Instructor not found");
+            var instructorExists = await instructorRepo.ExistsAsync(instructorId);
+            if (!instructorExists) throw new ItemNotFoundException("Instructor not found");
 
             var existingAssignment = await courseInstructorRepo
                 .FindAsync(ci => ci.CourseId == courseId && ci.InstructorId == instructorId);

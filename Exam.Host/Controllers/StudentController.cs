@@ -2,9 +2,11 @@
 using Exam.Application.Dto.Course;
 using Exam.Application.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
-namespace Exam.API.Controllers
+namespace Exam.Host.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/students")]
     public class StudentsController : ControllerBase
@@ -16,6 +18,10 @@ namespace Exam.API.Controllers
             _studentService = studentService;
         }
 
+        /// <summary>
+        /// Retrieve all registered students.
+        /// </summary>
+        /// <returns>A list of students.</returns>
         [HttpGet("GetAll")]
         public async Task<IActionResult> GetAll()
         {
@@ -23,6 +29,11 @@ namespace Exam.API.Controllers
             return Ok(res);
         }
 
+        /// <summary>
+        /// Get a student's profile by ID.
+        /// </summary>
+        /// <param name="id">Student ID.</param>
+        /// <returns>Student profile details.</returns>
         [HttpGet("GetById/{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -30,6 +41,12 @@ namespace Exam.API.Controllers
             return Ok(res);
         }
 
+        /// <summary>
+        /// [Admin Only] Create a new student record.
+        /// </summary>
+        /// <param name="dto">Student creation data.</param>
+        /// <returns>Result of the creation process.</returns>
+        [Authorize(Roles = "Admin")]
         [HttpPost("Create")]
         public async Task<IActionResult> Create([FromBody] StudentCreateDTO dto)
         {
@@ -37,6 +54,13 @@ namespace Exam.API.Controllers
             return res.Success ? Ok(res) : BadRequest(res);
         }
 
+        /// <summary>
+        /// [Admin Only] Update an existing student's profile.
+        /// </summary>
+        /// <param name="id">Student ID to update.</param>
+        /// <param name="dto">Updated student data.</param>
+        /// <returns>Result of the update process.</returns>
+        [Authorize(Roles = "Admin")]
         [HttpPut("Update/{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] StudentUpdateDTO dto)
         {
@@ -44,6 +68,12 @@ namespace Exam.API.Controllers
             return res.Success ? Ok(res) : BadRequest(res);
         }
 
+        /// <summary>
+        /// [Admin Only] Delete a student record by ID.
+        /// </summary>
+        /// <param name="id">Student ID to delete.</param>
+        /// <returns>Result of the deletion process.</returns>
+        [Authorize(Roles = "Admin")]
         [HttpDelete("Delete/{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -51,6 +81,11 @@ namespace Exam.API.Controllers
             return res.Success ? Ok(res) : BadRequest(res);
         }
 
+        /// <summary>
+        /// Get all courses that a specific student is enrolled in.
+        /// </summary>
+        /// <param name="id">Student ID.</param>
+        /// <returns>A list of enrolled courses.</returns>
         [HttpGet("{id:int}/courses")]
         public async Task<IActionResult> GetStudentCourses(int id)
         {

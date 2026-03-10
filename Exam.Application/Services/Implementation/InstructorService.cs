@@ -3,10 +3,10 @@ using Exam.Application.Dto.Common;
 using Exam.Application.Dto.Instructor;
 using Exam.Application.Exceptions;
 using Exam.Application.Services.Interfaces;
-using Exam.Domain;
 using Exam.Domain.Entities;
 using Exam.Domain.Enum;
 using Exam.Domain.Interface;
+using Exam.Domain.Interface.Authentication;
 
 namespace Exam.Application.Services.Implementation
 {
@@ -14,11 +14,13 @@ namespace Exam.Application.Services.Implementation
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IUserManagement _userManagement;
 
-        public InstructorService(IUnitOfWork unitOfWork, IMapper mapper)
+        public InstructorService(IUnitOfWork unitOfWork, IMapper mapper, IUserManagement userManagement)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _userManagement = userManagement;
         }
 
         // ================================
@@ -60,8 +62,14 @@ namespace Exam.Application.Services.Implementation
             instructor.HireDate = dto.HireDate ?? DateTime.UtcNow;
             instructor.UserType = UserType.Instructor;
 
-            await _unitOfWork.Repository<Instructor>().AddAsync(instructor);
-            await _unitOfWork.CompleteAsync();
+            // Use UserManagement to handle hashing and roles
+            var result = await _userManagement.CreateUser(instructor, dto.Password);
+
+            if (!result.Succeeded)
+            {
+                var error = string.Join(", ", result.Errors.Select(e => e.Description));
+                return ServiceResponse.Fail(error);
+            }
 
             return ServiceResponse.Ok("Instructor created successfully");
         }

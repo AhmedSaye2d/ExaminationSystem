@@ -1,9 +1,11 @@
 using Exam.Application.Dto.Course;
 using Exam.Application.Services.Interfaces.ICourseService;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
-namespace Exam.API.Controllers
+namespace Exam.Host.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/courses")]
     public class CoursesController : ControllerBase
@@ -15,6 +17,10 @@ namespace Exam.API.Controllers
             _courseService = courseService;
         }
 
+        /// <summary>
+        /// Retrieve all courses.
+        /// </summary>
+        /// <returns>A list of courses.</returns>
         [HttpGet("GetAll")]
         public async Task<IActionResult> GetAll()
         {
@@ -22,6 +28,11 @@ namespace Exam.API.Controllers
             return Ok(res);
         }
 
+        /// <summary>
+        /// Get details of a specific course by ID.
+        /// </summary>
+        /// <param name="id">Course ID.</param>
+        /// <returns>The course details.</returns>
         [HttpGet("GetById/{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -29,6 +40,12 @@ namespace Exam.API.Controllers
             return Ok(res);
         }
 
+        /// <summary>
+        /// [Admin Only] Create a new course.
+        /// </summary>
+        /// <param name="dto">Course creation data.</param>
+        /// <returns>Success message.</returns>
+        [Authorize(Roles = "Admin")]
         [HttpPost("Create")]
         public async Task<IActionResult> Create([FromBody] CourseCreateDTO dto)
         {
@@ -36,6 +53,13 @@ namespace Exam.API.Controllers
             return Ok(new { message = "Course created successfully" });
         }
 
+        /// <summary>
+        /// [Admin Only] Update an existing course.
+        /// </summary>
+        /// <param name="id">Course ID to update.</param>
+        /// <param name="dto">Updated course data.</param>
+        /// <returns>Success message.</returns>
+        [Authorize(Roles = "Admin")]
         [HttpPut("Update/{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] CourseCreateDTO dto)
         {
@@ -43,6 +67,12 @@ namespace Exam.API.Controllers
             return Ok(new { message = "Course updated successfully" });
         }
 
+        /// <summary>
+        /// [Admin Only] Delete a course by ID.
+        /// </summary>
+        /// <param name="id">Course ID to delete.</param>
+        /// <returns>Success message.</returns>
+        [Authorize(Roles = "Admin")]
         [HttpDelete("Delete/{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -50,6 +80,11 @@ namespace Exam.API.Controllers
             return Ok(new { message = "Course deleted successfully" });
         }
 
+        /// <summary>
+        /// Retrieve all exams associated with a specific course.
+        /// </summary>
+        /// <param name="courseId">Course ID.</param>
+        /// <returns>A list of exams for the course.</returns>
         [HttpGet("{courseId:int}/exams")]
         public async Task<IActionResult> GetCourseExams(int courseId)
         {
@@ -57,6 +92,13 @@ namespace Exam.API.Controllers
             return Ok(exams);
         }
 
+        /// <summary>
+        /// [Admin Only] Assign an instructor to teach a specific course.
+        /// </summary>
+        /// <param name="courseId">Course ID.</param>
+        /// <param name="instructorId">Instructor ID to assign.</param>
+        /// <returns>Success message.</returns>
+        [Authorize(Roles = "Admin")]
         [HttpPost("{courseId:int}/assign-instructor")]
         public async Task<IActionResult> AssignInstructor(int courseId, [FromQuery] int instructorId)
         {

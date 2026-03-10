@@ -8,6 +8,7 @@ using Exam.Domain;
 using Exam.Domain.Entities;
 using Exam.Domain.Enum;
 using Exam.Domain.Interface;
+using Exam.Domain.Interface.Authentication;
 
 namespace Exam.Application.Services.Implementation
 {
@@ -15,11 +16,13 @@ namespace Exam.Application.Services.Implementation
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IUserManagement _userManagement;
 
-        public StudentService(IUnitOfWork unitOfWork, IMapper mapper)
+        public StudentService(IUnitOfWork unitOfWork, IMapper mapper, IUserManagement userManagement)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _userManagement = userManagement;
         }
 
         // ================================
@@ -63,8 +66,14 @@ namespace Exam.Application.Services.Implementation
             student.IsActive = true;
             student.IsDeleted = false;
 
-            await _unitOfWork.Repository<Student>().AddAsync(student);
-            await _unitOfWork.CompleteAsync();
+            // Use UserManagement for secure creation
+            var result = await _userManagement.CreateUser(student, dto.Password);
+
+            if (!result.Succeeded)
+            {
+                var error = string.Join(", ", result.Errors.Select(e => e.Description));
+                return ServiceResponse.Fail(error);
+            }
 
             return ServiceResponse.Ok("Student created successfully");
         }

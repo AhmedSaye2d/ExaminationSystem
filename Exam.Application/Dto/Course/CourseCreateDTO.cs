@@ -23,7 +23,7 @@ namespace Exam.Application.Dto.Course
         public DateTime EndDate { get; set; }
         // نهاية الكورس
 
-        //public int CreditHours { get; set; }
+        public int CreditHours { get; set; }
         // عدد الساعات المعتمدة
 
         public int DepartmentId { get; set; }

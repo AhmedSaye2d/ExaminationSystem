@@ -2,9 +2,11 @@
 using Exam.Application.Dto.Question;
 using Exam.Application.Exceptions;
 using Exam.Application.Services.Interfaces.IQuestionServices;
-using Exam.Domain;
 using Exam.Domain.Entities;
 using Exam.Domain.Interface;
+
+namespace Exam.Application.Services.Implementation
+{
 
 public class QuestionService : IQuestionService
 {
@@ -53,34 +55,24 @@ public class QuestionService : IQuestionService
 
     public async Task<int> AddQuestionWithChoicesAsync(QuestionWithChoicesDTO dto)
     {
+        // 1. Validation
+        if (string.IsNullOrWhiteSpace(dto.Text))
+            throw new ArgumentException("Question text cannot be empty");
+
         if (dto.Choices == null || !dto.Choices.Any())
             throw new ArgumentException("Question must contain choices");
+
+        if (dto.Choices.Any(c => string.IsNullOrWhiteSpace(c.Text)))
+            throw new ArgumentException("Choice text cannot be empty");
 
         if (dto.Choices.Count(c => c.IsCorrect) != 1)
             throw new ArgumentException("There must be exactly one correct answer");
 
-        var question = new Question
-        {
-            Text = dto.Text,
-            Grade = dto.Grade,
-            Type = dto.Type
-        };
+        // 2. Mapping
+        var question = _mapper.Map<Question>(dto);
 
-        var questionRepo = _unitOfWork.Repository<Question>();
-        var choiceRepo = _unitOfWork.Repository<Choice>();
-
-        await questionRepo.AddAsync(question);
-
-        foreach (var choiceDto in dto.Choices)
-        {
-            await choiceRepo.AddAsync(new Choice
-            {
-                Text = choiceDto.Text,
-                IsCorrectAnswer = choiceDto.IsCorrect,
-                QuestionId = question.Id
-            });
-        }
-
+        // 3. Save
+        await _unitOfWork.Repository<Question>().AddAsync(question);
         await _unitOfWork.CompleteAsync();
 
         return question.Id;
@@ -101,10 +93,8 @@ public class QuestionService : IQuestionService
     public async Task DeleteAsync(int id)
     {
         var questionRepo = _unitOfWork.Repository<Question>();
-        var question = await questionRepo.GetByIdAsync(id)
-                       ?? throw new ItemNotFoundException("Question not found");
-
         await questionRepo.DeleteAsync(id);
         await _unitOfWork.CompleteAsync();
     }
+}
 }

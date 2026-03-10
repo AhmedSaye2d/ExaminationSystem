@@ -76,7 +76,18 @@ public class DepartmentService : IDepartmentService
         if (department == null)
             throw new ItemNotFoundException("Department not found");
 
-        await repo.DeleteAsync(id);
+        // Check for dependencies
+        var instructors = await _unitOfWork.Repository<Instructor>().FindAsync(i => i.DepartmentId == id && !i.IsDeleted);
+        if (instructors.Any())
+            throw new ArgumentException("Cannot delete department with active instructors");
+
+        var courses = await _unitOfWork.Repository<Course>().FindAsync(c => c.DepartmentId == id && !c.IsDeleted);
+        if (courses.Any())
+            throw new ArgumentException("Cannot delete department with active courses");
+
+        // Soft Delete
+        department.IsDeleted = true;
+        await repo.UpdateAsync(department);
         await _unitOfWork.CompleteAsync();
     }
 }

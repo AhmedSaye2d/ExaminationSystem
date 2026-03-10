@@ -125,6 +125,13 @@ namespace Exam.Application.Services.Implementation
             // Check Ownership
             if (exam.InstructorID != instructorId)
                 throw new UnauthorizedAccessException("You can only delete your own exams");
+            // Check if there are student attempts
+            var attempts = await _unitOfWork.Repository<ExamStudent>().FindAsync(x => x.ExamId == id && !x.IsDeleted);
+            if (attempts.Any())
+                throw new ArgumentException("Cannot delete exam with student attempts");
+
+            exam.IsDeleted = true;
+            await examRepo.UpdateAsync(exam);
 
             exam.IsDeleted = true;
             await examRepo.UpdateAsync(exam);

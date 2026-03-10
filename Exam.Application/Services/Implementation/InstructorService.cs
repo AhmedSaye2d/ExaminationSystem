@@ -3,7 +3,6 @@ using Exam.Application.Dto.Common;
 using Exam.Application.Dto.Instructor;
 using Exam.Application.Exceptions;
 using Exam.Application.Services.Interfaces;
-using Exam.Domain;
 using Exam.Domain.Entities;
 using Exam.Domain.Enum;
 using Exam.Domain.Interface;

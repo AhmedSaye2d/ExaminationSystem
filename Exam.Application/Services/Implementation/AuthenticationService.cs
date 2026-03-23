@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Exam.Application.Dto.Common;
 using Exam.Application.Dto.Identity;
 using Exam.Application.Services.Interfaces.Authentication;
@@ -40,6 +40,11 @@ namespace Exam.Application.Services.Implementation
                 return ServiceResponse.Fail(validation.Errors.First().ErrorMessage);
 
             var appUser = _mapper.Map<AppUser>(user);
+            
+            // 🔥 SECURE: Always default newly registered users to Student
+            // Do not trust the UserType property from the incoming DTO
+            appUser.UserType = Exam.Domain.Enum.UserType.Student;
+            
             var result = await _userManagement.CreateUser(appUser, user.Password);
 
             if (!result.Succeeded)
@@ -113,14 +118,8 @@ namespace Exam.Application.Services.Implementation
 
             return new LoginResponse(true, "Token refreshed", newToken, newRefreshToken);
         }
-        public async Task<ServiceResponse> Logout(string refreshToken)
-        {
-            bool revoked = await _tokenManagement.RevokeRefreshToken(refreshToken);
 
-            if (!revoked)
-                return ServiceResponse.Fail("Invalid refresh token");
 
-            return ServiceResponse.Ok("Logged out successfully");
-        }
     }
 }
+

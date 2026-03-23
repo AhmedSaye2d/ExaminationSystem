@@ -1,4 +1,4 @@
-﻿using Exam.Domain;
+using Exam.Domain;
 using Exam.Domain.Entities.Common;
 using Exam.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -127,6 +127,19 @@ namespace Exam.Infrastructure.Repository
                 .AnyAsync();
         }
 
+        public async Task<bool> ExistsAsync(Expression<Func<TEntity, bool>> predicate)
+        {
+            var query = _dbSet.AsQueryable();
+
+            // 🔥 Soft Delete
+            if (typeof(BaseEntity).IsAssignableFrom(typeof(TEntity)) || typeof(Exam.Domain.Entities.Identity.AppUser).IsAssignableFrom(typeof(TEntity)))
+            {
+                query = query.Where(e => !EF.Property<bool>(e, "IsDeleted"));
+            }
+
+            return await query.AnyAsync(predicate);
+        }
+
         // ============================================
         // GET PAGED
         // ============================================
@@ -134,7 +147,8 @@ namespace Exam.Infrastructure.Repository
             int page, 
             int pageSize, 
             Expression<Func<TEntity, bool>>? predicate = null, 
-            bool asNoTracking = true)
+            bool asNoTracking = true,
+            params string[] includes)
         {
             IQueryable<TEntity> query = _dbSet;
 
@@ -142,6 +156,11 @@ namespace Exam.Infrastructure.Repository
             if (typeof(BaseEntity).IsAssignableFrom(typeof(TEntity)) || typeof(Exam.Domain.Entities.Identity.AppUser).IsAssignableFrom(typeof(TEntity)))
             {
                 query = query.Where(e => !EF.Property<bool>(e, "IsDeleted"));
+            }
+
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
             }
 
             if (predicate != null)

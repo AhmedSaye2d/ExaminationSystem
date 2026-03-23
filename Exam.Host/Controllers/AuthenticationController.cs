@@ -54,17 +54,8 @@ namespace Exam.Host.Controllers
             return res.Success ? Ok(res) : Unauthorized(res);
         }
 
-        /// <summary>
-        /// Logout a user and invalidate their refresh token.
-        /// </summary>
-        /// <param name="request">The logout request containing the refresh token.</param>
-        /// <returns>Result of the logout process.</returns>
-        [AllowAnonymous]
-        [HttpPost("logout")]
-        public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request)
-        {
-            var res = await _authenticationService.Logout(request.RefreshToken);
-            return res.Success ? Ok(res) : BadRequest(res);
-        }
+
+
     }
 }
+

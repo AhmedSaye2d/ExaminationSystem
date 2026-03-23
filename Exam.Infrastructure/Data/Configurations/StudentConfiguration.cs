@@ -13,9 +13,6 @@ namespace Exam.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Student> builder)
         {
-            builder.Property(s => s.GPA)
-                .HasDefaultValue(0);
-            // القيمة الافتراضية للمعدل التراكمي
 
             builder.HasOne(s => s.Major)
                 .WithMany(d => d.Students)

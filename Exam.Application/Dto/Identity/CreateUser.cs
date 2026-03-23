@@ -1,4 +1,4 @@
-﻿using Exam.Domain.Enum;
+using Exam.Domain.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;

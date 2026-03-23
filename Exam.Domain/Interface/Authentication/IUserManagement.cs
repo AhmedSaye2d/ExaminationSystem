@@ -24,5 +24,8 @@ namespace Exam.Domain.Interface.Authentication
 
         // Claims
         Task<List<Claim>> GetUserClaim(string email);
+
+        // Password management
+        Task<IdentityResult> ChangePassword(AppUser user, string currentPassword, string newPassword);
     }
 }

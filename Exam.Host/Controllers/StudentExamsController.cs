@@ -2,8 +2,6 @@ using Exam.Application.Dto.SubmitExam;
 using Exam.Application.Services.Interfaces.IExamStudentServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 using System.Security.Claims;
 
 namespace Exam.Host.Controllers
@@ -11,7 +9,6 @@ namespace Exam.Host.Controllers
     [Authorize]
     [ApiController]
     [Route("api/student-exams")]
-    [Authorize]
     public class StudentExamsController : ControllerBase
     {
         private readonly IStudentExamService _studentExamService;
@@ -26,8 +23,8 @@ namespace Exam.Host.Controllers
         /// </summary>
         /// <param name="examId">Exam ID.</param>
         /// <returns>The ID of the newly created session.</returns>
-        [HttpPost("start")]
-        public async Task<IActionResult> StartExam([FromQuery] int examId)
+        [HttpPost("start/{examId:int}")]
+        public async Task<IActionResult> StartExam(int examId)
         {
             var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var examStudentId = await _studentExamService.StartExamAsync(examId, studentId);
@@ -43,8 +40,8 @@ namespace Exam.Host.Controllers
         [HttpPost("{examStudentId:int}/answers")]
         public async Task<IActionResult> SaveAnswer(int examStudentId, [FromBody] StudentAnswerDTO dto)
         {
-            // Note: Ideally, you'd verify here if examStudentId belongs to the current student
-            await _studentExamService.SaveAnswerAsync(examStudentId, dto.QuestionId, dto.ChoiceId);
+            var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            await _studentExamService.SaveAnswerAsync(examStudentId, studentId, dto.QuestionId, dto.ChoiceId);
             return Ok(new { message = "Answer saved successfully" });
         }
 
@@ -56,7 +53,8 @@ namespace Exam.Host.Controllers
         [HttpPost("{examStudentId:int}/submit")]
         public async Task<IActionResult> SubmitExam(int examStudentId)
         {
-            await _studentExamService.SubmitExamAsync(examStudentId);
+            var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            await _studentExamService.SubmitExamAsync(examStudentId, studentId);
             return Ok(new { message = "Exam submitted successfully" });
         }
 
@@ -68,8 +66,20 @@ namespace Exam.Host.Controllers
         [HttpGet("{examStudentId:int}/questions")]
         public async Task<IActionResult> GetExamQuestions(int examStudentId)
         {
-            var questions = await _studentExamService.GetExamQuestionsAsync(examStudentId);
+            var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var questions = await _studentExamService.GetExamQuestionsAsync(examStudentId, studentId);
             return Ok(questions);
+        }
+
+        /// <summary>
+        /// Resume an exam session (return saved answers, remaining time and questions)
+        /// </summary>
+        [HttpGet("{examStudentId:int}/resume")]
+        public async Task<IActionResult> ResumeExam(int examStudentId)
+        {
+            var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var resume = await _studentExamService.ResumeExamAsync(examStudentId, studentId);
+            return Ok(resume);
         }
 
         /// <summary>
@@ -80,39 +90,34 @@ namespace Exam.Host.Controllers
         [HttpGet("{examStudentId:int}/result")]
         public async Task<IActionResult> GetSessionResult(int examStudentId)
         {
-            var result = await _studentExamService.GetResultBySessionAsync(examStudentId);
+            var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _studentExamService.GetResultBySessionAsync(examStudentId, studentId);
             return Ok(result);
         }
 
-        /// <summary>
-        /// Get all results for a specific exam across all students.
-        /// </summary>
-        /// <param name="examId">Exam ID.</param>
-        /// <returns>List of student results for the exam.</returns>
-        [HttpGet("results/exam/{examId:int}")]
-        public async Task<IActionResult> GetExamResults(int examId)
-        [HttpGet("my-results")]
-        public async Task<IActionResult> GetMyResults()
-        {
-            var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var results = await _studentExamService.GetStudentResultsAsync(studentId);
-            return Ok(results);
-        }
+
 
         /// <summary>
         /// Get all exam results for the current authenticated student.
         /// </summary>
         /// <returns>List of student's results.</returns>
         [HttpGet("results/my-results")]
-        public async Task<IActionResult> GetMyResults()
-        [HttpGet("results/exam/{examId:int}")]
-        [Authorize(Roles = "Instructor,Admin")]
-        public async Task<IActionResult> GetExamResults(int examId)
+        public async Task<IActionResult> GetMyResults([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var results = await _studentExamService.GetStudentResultsAsync(studentId);
-            var results = await _studentExamService.GetExamResultsAsync(examId);
-            return Ok(results);
+            var res = await _studentExamService.GetStudentResultsPagedAsync(studentId, page, pageSize);
+            return Ok(new { data = res.Items, totalCount = res.TotalCount, page, pageSize });
+        }
+
+        /// <summary>
+        /// [Admin/Instructor Only] Get paged results for a specific exam.
+        /// </summary>
+        [HttpGet("results/exam/{examId:int}")]
+        [Authorize(Roles = "Admin,Instructor")]
+        public async Task<IActionResult> GetExamResults(int examId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            var res = await _studentExamService.GetExamResultsPagedAsync(examId, page, pageSize);
+            return Ok(new { data = res.Items, totalCount = res.TotalCount, page, pageSize });
         }
 
         /// <summary>
@@ -122,8 +127,6 @@ namespace Exam.Host.Controllers
         /// <returns>Result summary.</returns>
         [HttpGet("results/my-summary")]
         public async Task<IActionResult> GetMyExamSummary([FromQuery] int examId)
-        [HttpGet("results/summary")]
-        public async Task<IActionResult> GetExamResultSummary([FromQuery] int examId)
         {
             var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var result = await _studentExamService.GetExamResultAsync(examId, studentId);

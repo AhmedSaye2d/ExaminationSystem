@@ -1,4 +1,4 @@
-﻿using Exam.Domain.Common;
+using Exam.Domain.Common;
 using Exam.Domain.Entities.Common;
 using Exam.Domain.Enum;
 
@@ -11,7 +11,6 @@ namespace Exam.Domain.Entities
         public DateTime StartDate { get; set; }
         public DateTime DueDate { get; set; }
         public int TotalQuestions { get; set; }
-        public int TotalPoints { get; set; }
         public ExamType Type { get; set; }
 
         public int CourseID { get; set; }
@@ -24,6 +23,7 @@ namespace Exam.Domain.Entities
         public List<Question> Questions { get; set; } = new();
         public List<ExamStudent> ExamStudents { get; set; }
         public int TotalGrade { get; set; }
+        public int PassingScore { get; set; } = 0; // Minimum score to pass (set by instructor)
         public bool IsPublished { get; set; } = false;
     }
 }

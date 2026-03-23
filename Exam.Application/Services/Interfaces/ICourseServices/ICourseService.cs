@@ -1,4 +1,4 @@
-﻿using Exam.Application.Dto.Course;
+using Exam.Application.Dto.Course;
 
 namespace Exam.Application.Services.Interfaces.ICourseService
 {
@@ -14,7 +14,8 @@ namespace Exam.Application.Services.Interfaces.ICourseService
 
         Task DeleteAsync(int id);
 
-        Task<IEnumerable<Exam.Application.Dto.Exam.ExamDTO>> GetCourseExamsAsync(int courseId);
+        Task<IEnumerable<Exam.Application.Dto.Exam.ExamDTO>> GetCourseExamsAsync(int courseId, int userId, string role);
+        Task<IEnumerable<Exam.Application.Dto.Student.StudentDTO>> GetCourseStudentsAsync(int courseId);
         Task AssignInstructorToCourseAsync(int courseId, int instructorId);
     }
 }

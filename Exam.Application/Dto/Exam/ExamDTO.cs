@@ -1,4 +1,4 @@
-﻿using Exam.Domain.Enum;
+using Exam.Domain.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +17,8 @@ namespace Exam.Application.Dto.Exam
         public ExamType Type { get; set; }
         public int CourseId { get; set; }
         public int InstructorId { get; set; }
+        public int TotalGrade { get; set; }
+        public int PassingScore { get; set; }
     }
 
 }

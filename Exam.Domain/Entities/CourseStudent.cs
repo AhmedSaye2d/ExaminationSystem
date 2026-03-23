@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Exam.Domain.Enum;
 
 namespace Exam.Domain.Entities
 {
@@ -17,5 +18,8 @@ namespace Exam.Domain.Entities
         // Student
         public int StudentId { get; set; }
         public Student Student { get; set; }
+
+        public DateTime EnrollmentDate { get; set; } = DateTime.UtcNow;
+        public EnrollmentStatus Status { get; set; } = EnrollmentStatus.Active;
     }
 }

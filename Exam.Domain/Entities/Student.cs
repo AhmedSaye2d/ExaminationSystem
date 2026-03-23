@@ -10,10 +10,6 @@ namespace Exam.Domain.Entities
 {
     public class Student : AppUser
     {
-        public Gender Gender { get; set; }
-
-        public double GPA { get; set; }
-
         // Major (Department)
         public int MajorId { get; set; }//لقسم اللي الطالب تابع ليه
         public Department Major { get; set; }

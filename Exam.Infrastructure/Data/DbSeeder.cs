@@ -88,9 +88,9 @@ namespace Exam.Infrastructure.Data
 
             if (!await context.Students.AnyAsync())
             {
-                var stu1 = new Student { UserName = "student1@example.com", Email = "student1@example.com", FirstName = "Youssef", LastName = "Nabil", UserType = UserType.Student, MajorId = csDept.Id, EmailConfirmed = true, Gender = Gender.Male, GPA = 3.6 };
-                var stu2 = new Student { UserName = "student2@example.com", Email = "student2@example.com", FirstName = "Nour", LastName = "Hassan", UserType = UserType.Student, MajorId = seDept.Id, EmailConfirmed = true, Gender = Gender.Female, GPA = 3.8 };
-                var stu3 = new Student { UserName = "postman@example.com", Email = "postman@example.com", FirstName = "Postman", LastName = "Tester", UserType = UserType.Student, MajorId = csDept.Id, EmailConfirmed = true, Gender = Gender.Male, GPA = 4.0 };
+                var stu1 = new Student { UserName = "student1@example.com", Email = "student1@example.com", FirstName = "Youssef", LastName = "Nabil", UserType = UserType.Student, MajorId = csDept.Id, EmailConfirmed = true, Gender = Gender.Male };
+                var stu2 = new Student { UserName = "student2@example.com", Email = "student2@example.com", FirstName = "Nour", LastName = "Hassan", UserType = UserType.Student, MajorId = seDept.Id, EmailConfirmed = true, Gender = Gender.Female };
+                var stu3 = new Student { UserName = "postman@example.com", Email = "postman@example.com", FirstName = "Postman", LastName = "Tester", UserType = UserType.Student, MajorId = csDept.Id, EmailConfirmed = true, Gender = Gender.Male };
                 
                 await userManager.CreateAsync(stu1, "P@ssword123");
                 await userManager.AddToRoleAsync(stu1, UserType.Student.ToString());
@@ -132,50 +132,30 @@ namespace Exam.Infrastructure.Data
             var course1 = await context.Courses.FirstOrDefaultAsync(c => c.Code == "CS201");
             if (course1 == null) return;
 
-            // 4. Questions & Choices
-            if (!await context.Questions.AnyAsync())
+            // 4. Exams & Questions
+            var existingMidterm = await context.Exams.FirstOrDefaultAsync(e => e.Name == "Data Structures Midterm");
+            if (existingMidterm != null)
             {
-                var q1 = new Question { Text = "Which data structure uses LIFO?", Type = QuestionType.MCQ, DifficultyLevel = 1, Grade = 2 };
-                q1.Choices = new HashSet<Choice>
-                {
-                    new Choice { Text = "Queue", IsCorrectAnswer = false, Order = 1 },
-                    new Choice { Text = "Stack", IsCorrectAnswer = true, Order = 2 },
-                    new Choice { Text = "Linked List", IsCorrectAnswer = false, Order = 3 }
-                };
-
-                var q2 = new Question { Text = "Which data structure uses FIFO?", Type = QuestionType.MCQ, DifficultyLevel = 1, Grade = 2 };
-                q2.Choices = new HashSet<Choice>
-                {
-                    new Choice { Text = "Stack", IsCorrectAnswer = false, Order = 1 },
-                    new Choice { Text = "Queue", IsCorrectAnswer = true, Order = 2 },
-                    new Choice { Text = "Array", IsCorrectAnswer = false, Order = 3 }
-                };
-
-                var q3 = new Question { Text = "Array elements are stored in contiguous memory locations.", Type = QuestionType.TrueFalse, DifficultyLevel = 1, Grade = 1 };
-                q3.Choices = new HashSet<Choice>
-                {
-                    new Choice { Text = "True", IsCorrectAnswer = true, Order = 1 },
-                    new Choice { Text = "False", IsCorrectAnswer = false, Order = 2 }
-                };
-
-                await context.Questions.AddRangeAsync(q1, q2, q3);
+                existingMidterm.StartDate = new DateTime(2026, 3, 23, 1, 10, 0);
+                existingMidterm.DueDate = new DateTime(2026, 3, 23, 3, 0, 0);
                 await context.SaveChangesAsync();
             }
 
-            // 5. Exams & Settings
             if (!await context.Exams.AnyAsync())
             {
                 var exam = new Exam.Domain.Entities.Exam
                 {
                     Name = "Data Structures Midterm",
                     Description = "Covers Arrays, Stacks, and Queues",
-                    StartDate = DateTime.UtcNow.AddDays(-1), // Open from yesterday
-                    DueDate = DateTime.UtcNow.AddDays(7), // Available for a week
+                    StartDate = new DateTime(2026, 3, 23, 1, 10, 0),
+                    DueDate = new DateTime(2026, 3, 23, 3, 0, 0),
                     TotalQuestions = 3,
-                    TotalPoints = 5,
+                    TotalGrade = 5,
                     Type = ExamType.Midterm,
                     CourseID = course1.Id,
                     InstructorID = instructor1.Id,
+                    IsPublished = true,
+                    PassingScore = 50,
                     Settings = new ExamSettings 
                     { 
                         DurationMinutes = 60, 
@@ -188,15 +168,62 @@ namespace Exam.Infrastructure.Data
                 await context.Exams.AddAsync(exam);
                 await context.SaveChangesAsync();
 
-                var questions = await context.Questions.Take(3).ToListAsync();
-                foreach (var (q, index) in questions.Select((q, i) => (q, i)))
+                if (!await context.Questions.AnyAsync())
                 {
-                    context.ExamQuestions.Add(new ExamQuestion { ExamId = exam.Id, QuestionId = q.Id, Points = q.Grade });
+                    var q1 = new Question 
+                    { 
+                        Text = "Which data structure uses LIFO?", 
+                        Type = QuestionType.MCQ, 
+                        DifficultyLevel = 1, 
+                        Grade = 2,
+                        ExamId = exam.Id,
+                        Order = 1
+                    };
+                    q1.Choices = new HashSet<Choice>
+                    {
+                        new Choice { Text = "Queue", IsCorrectAnswer = false, Order = 1 },
+                        new Choice { Text = "Stack", IsCorrectAnswer = true, Order = 2 },
+                        new Choice { Text = "Linked List", IsCorrectAnswer = false, Order = 3 }
+                    };
+
+                    var q2 = new Question 
+                    { 
+                        Text = "Which data structure uses FIFO?", 
+                        Type = QuestionType.MCQ, 
+                        DifficultyLevel = 1, 
+                        Grade = 2,
+                        ExamId = exam.Id,
+                        Order = 2
+                    };
+                    q2.Choices = new HashSet<Choice>
+                    {
+                        new Choice { Text = "Stack", IsCorrectAnswer = false, Order = 1 },
+                        new Choice { Text = "Queue", IsCorrectAnswer = true, Order = 2 },
+                        new Choice { Text = "Array", IsCorrectAnswer = false, Order = 3 }
+                    };
+
+                    var q3 = new Question 
+                    { 
+                        Text = "Array elements are stored in contiguous memory locations.", 
+                        Type = QuestionType.TrueFalse, 
+                        DifficultyLevel = 1, 
+                        Grade = 1,
+                        ExamId = exam.Id,
+                        Order = 3
+                    };
+                    q3.Choices = new HashSet<Choice>
+                    {
+                        new Choice { Text = "True", IsCorrectAnswer = true, Order = 1 },
+                        new Choice { Text = "False", IsCorrectAnswer = false, Order = 2 }
+                    };
+
+                    await context.Questions.AddRangeAsync(q1, q2, q3);
+                    
+                    // Update exam stats
+                    exam.TotalQuestions = 3;
+                    exam.TotalGrade = 5;
+                    await context.SaveChangesAsync();
                 }
-                
-                // Set total points
-                exam.TotalPoints = questions.Sum(q => q.Grade);
-                await context.SaveChangesAsync();
             }
         }
     }

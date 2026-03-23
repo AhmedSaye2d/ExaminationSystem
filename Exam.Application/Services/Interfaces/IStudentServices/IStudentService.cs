@@ -4,20 +4,24 @@ using Exam.Application.Dto.Exam;
 using Exam.Application.Dto.Student;
 using Exam.Application.Dto.SubmitExam;
 
-public interface IStudentService
+namespace Exam.Application.Services.Interfaces.IStudentServices
 {
-    Task<IEnumerable<StudentDTO>> GetAllAsync();
+    public interface IStudentService
+    {
+        Task<IEnumerable<StudentDTO>> GetAllAsync();
+        Task<(IEnumerable<StudentDTO> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, string? search = null);
 
-    Task<StudentDTO> GetByIdAsync(int id); // مش nullable
+        Task<StudentDTO> GetByIdAsync(int id); // مش nullable
 
-    Task<ServiceResponse> CreateAsync(StudentCreateDTO dto);
+        Task<ServiceResponse> CreateAsync(StudentCreateDTO dto);
 
-    Task<ServiceResponse> UpdateAsync(int id, StudentUpdateDTO dto);
+        Task<ServiceResponse> UpdateAsync(int id, StudentUpdateDTO dto);
 
-    Task<ServiceResponse> DeleteAsync(int id);
+        Task<ServiceResponse> DeleteAsync(int id);
 
-    Task<IEnumerable<CourseDTO>> GetStudentCoursesAsync(int studentId);
-    Task<IEnumerable<ExamDTO>> GetStudentExamsAsync(int studentId);
-    Task<IEnumerable<ExamResultDTO>> GetStudentResultsAsync(int studentId);
-    Task<ServiceResponse> EnrollCourseAsync(int studentId, int courseId);
+        Task<IEnumerable<CourseDTO>> GetStudentCoursesAsync(int studentId);
+        Task<IEnumerable<ExamDTO>> GetStudentExamsAsync(int studentId);
+        Task<IEnumerable<ExamResultDTO>> GetStudentResultsAsync(int studentId);
+        Task<ServiceResponse> EnrollCourseAsync(int studentId, int courseId);
+    }
 }

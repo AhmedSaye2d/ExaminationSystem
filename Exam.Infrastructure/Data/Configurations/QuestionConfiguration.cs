@@ -1,4 +1,4 @@
-﻿using Exam.Domain.Entities;
+using Exam.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -34,8 +34,13 @@ namespace Exam.Infrastructure.Data.Configurations
             builder.HasOne(q => q.Exam)
                 .WithMany(e => e.Questions)
                 .HasForeignKey(q => q.ExamId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .IsRequired(false) // This is now optional
+                .OnDelete(DeleteBehavior.SetNull); // Don't delete question if exam is deleted
             // كل سؤال ينتمي لامتحان واحد
+
+            // Performance optimizations (Indexing)
+            builder.HasIndex(q => q.ExamId);
+            builder.HasIndex(q => q.Type);
         }
     }
 }

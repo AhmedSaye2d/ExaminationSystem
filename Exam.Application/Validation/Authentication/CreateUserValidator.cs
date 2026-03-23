@@ -13,7 +13,7 @@ namespace Exam.Application.Validation.Authentication
         public CreateUserValidator()
         {
             RuleFor(x => x.FullName)
-                .NotEmpty().WithMessage("Password is required.");
+                .NotEmpty().WithMessage("Full Name is required.");
             RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email is required.")
             .EmailAddress().WithMessage("Invalid email format.");

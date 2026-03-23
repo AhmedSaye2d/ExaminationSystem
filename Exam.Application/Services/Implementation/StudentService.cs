@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Exam.Application.Dto.Common;
 using Exam.Application.Dto.Course;
 using Exam.Application.Dto.Exam;
@@ -6,6 +6,7 @@ using Exam.Application.Dto.Student;
 using Exam.Application.Dto.SubmitExam;
 using Exam.Application.Exceptions;
 using Exam.Application.Services.Interfaces;
+using Exam.Application.Services.Interfaces.IStudentServices;
 using Exam.Domain;
 using Exam.Domain.Entities;
 using Exam.Domain.Entities.Identity;
@@ -38,6 +39,21 @@ namespace Exam.Application.Services.Implementation
                 .FindAsync(s => !s.IsDeleted, "CourseStudents.Course");
 
             return _mapper.Map<IEnumerable<StudentDTO>>(students);
+        }
+
+        public async Task<(IEnumerable<StudentDTO> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, string? search = null)
+        {
+            var (items, totalCount) = await _unitOfWork.Repository<Student>()
+                .GetPagedAsync(
+                    page,
+                    pageSize,
+                    predicate: !string.IsNullOrEmpty(search) 
+                        ? s => (s.FirstName + " " + s.LastName).Contains(search) || s.Email!.Contains(search)
+                        : null,
+                    includes: "CourseStudents.Course"
+                );
+
+            return (_mapper.Map<IEnumerable<StudentDTO>>(items), totalCount);
         }
 
         // ================================
@@ -216,7 +232,7 @@ namespace Exam.Application.Services.Implementation
         public async Task<IEnumerable<ExamResultDTO>> GetStudentResultsAsync(int studentId)
         {
             var results = await _unitOfWork.Repository<ExamStudent>()
-                .FindAsync(es => es.StudentId == studentId, "Exam,Student");
+                .FindAsync(es => es.StudentId == studentId, "Exam", "Student");
 
             return _mapper.Map<IEnumerable<ExamResultDTO>>(results);
         }

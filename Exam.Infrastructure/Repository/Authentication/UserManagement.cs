@@ -76,5 +76,10 @@ namespace Exam.Infrastructure.Repository.Authentication
                 new Claim(ClaimTypes.Role, roleName!)
             };
         }
+
+        public async Task<IdentityResult> ChangePassword(AppUser user, string currentPassword, string newPassword)
+        {
+            return await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+        }
     }
 }

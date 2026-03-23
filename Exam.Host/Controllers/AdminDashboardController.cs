@@ -16,6 +16,10 @@ namespace Exam.API.Controllers
             _dashboardService = dashboardService;
         }
 
+        /// <summary>
+        /// Retrieves system statistics for the admin dashboard.
+        /// </summary>
+        /// <returns>Dashboard statistics including counts of various entities.</returns>
         [HttpGet("stats")]
         public async Task<IActionResult> GetStats()
         {

@@ -28,6 +28,11 @@ namespace Exam.Infrastructure.Data.Configurations
                    .OnDelete(DeleteBehavior.Restrict);
 
             builder.OwnsOne(e => e.Settings);
+
+            // Performance optimizations (Indexing)
+            builder.HasIndex(e => e.CourseID);
+            builder.HasIndex(e => e.InstructorID);
+            builder.HasIndex(e => new { e.StartDate, e.DueDate });
         }
     }
 }

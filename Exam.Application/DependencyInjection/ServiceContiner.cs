@@ -8,6 +8,7 @@ using Exam.Application.Services.Interfaces.IDepartmentServices;
 using Exam.Application.Services.Interfaces.IExamServices;
 using Exam.Application.Services.Interfaces.IExamStudentServices;
 using Exam.Application.Services.Interfaces.IQuestionServices;
+using Exam.Application.Services.Interfaces.IStudentServices;
 using Exam.Application.Validation;
 using Exam.Application.Validation.Authentication;
 using FluentValidation;

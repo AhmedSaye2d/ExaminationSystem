@@ -31,7 +31,7 @@ public class QuestionService : IQuestionService
             .GetPagedAsync(
                 page, 
                 pageSize, 
-                predicate: courseId.HasValue ? q => q.Exam.CourseID == courseId.Value : null
+                predicate: courseId.HasValue ? q => q.Exam != null && q.Exam.CourseID == courseId.Value : null
             );
             
         return (_mapper.Map<IEnumerable<QuestionDTO>>(items), totalCount);
@@ -69,10 +69,8 @@ public class QuestionService : IQuestionService
 
         // 2. Mapping
         var question = _mapper.Map<Question>(dto);
-        var question = _mapper.Map<Question>(dto);
 
         // 3. Save
-        await _unitOfWork.Repository<Question>().AddAsync(question);
         await _unitOfWork.Repository<Question>().AddAsync(question);
         await _unitOfWork.CompleteAsync();
 

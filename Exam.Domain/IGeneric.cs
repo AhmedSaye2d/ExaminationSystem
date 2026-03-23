@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 
 namespace Exam.Domain
 {
@@ -11,6 +11,12 @@ namespace Exam.Domain
         Task UpdateAsync(TEntity entity);
         Task DeleteAsync(int id);
         Task<bool> ExistsAsync(int id);
-        Task<(IEnumerable<TEntity> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, Expression<Func<TEntity, bool>>? predicate = null, bool asNoTracking = true);
+        Task<bool> ExistsAsync(Expression<Func<TEntity, bool>> predicate);
+        Task<(IEnumerable<TEntity> Items, int TotalCount)> GetPagedAsync(
+            int page, 
+            int pageSize, 
+            Expression<Func<TEntity, bool>>? predicate = null, 
+            bool asNoTracking = true,
+            params string[] includes);
     }
 }

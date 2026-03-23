@@ -48,14 +48,6 @@ namespace Exam.Infrastructure.Middleware
             // ==============================
             // Bad Request Errors
             // ==============================
-            catch (ArgumentException ex)
-            {
-                await HandleExceptionAsync(
-                    context,
-                    StatusCodes.Status400BadRequest,
-                    ex.Message
-                );
-            }
 
             // ==============================
             // Security Errors

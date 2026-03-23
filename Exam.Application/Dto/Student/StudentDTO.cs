@@ -11,7 +11,7 @@ namespace Exam.Application.Dto.Student
         public string LastName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public Gender Gender { get; set; }
-        public double GPA { get; set; }
+
         public int MajorId { get; set; }
         public List<CourseDTO> EnrolledCourses { get; set; } = new();
     }

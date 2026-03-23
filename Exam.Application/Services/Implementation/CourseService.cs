@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Exam.Application.Dto.Course;
 using Exam.Application.Exceptions;
 using Exam.Application.Services.Interfaces.ICourseService;
@@ -107,12 +107,35 @@ namespace Exam.Application.Services.Implementation
             await _unitOfWork.CompleteAsync();
         }
 
-        public async Task<IEnumerable<Exam.Application.Dto.Exam.ExamDTO>> GetCourseExamsAsync(int courseId)
+        public async Task<IEnumerable<Exam.Application.Dto.Exam.ExamDTO>> GetCourseExamsAsync(int courseId, int userId, string role)
         {
+            // SECURE: Only Admin, Instructor or Enrolled Student can see the exams
+            if (role == "Student")
+            {
+                var isEnrolled = await _unitOfWork.Repository<CourseStudent>()
+                    .ExistsAsync(cs => cs.CourseId == courseId && cs.StudentId == userId);
+                
+                if (!isEnrolled)
+                    throw new UnauthorizedAccessException("You are not enrolled in this course to view its exams.");
+            }
+
             var exams = await _unitOfWork.Repository<Domain.Entities.Exam>()
-                .FindAsync(e => e.CourseID == courseId);
+                .FindAsync(e => e.CourseID == courseId && !e.IsDeleted);
+
+            // Hide unpublished exams for students
+            if (role == "Student")
+                exams = exams.Where(e => e.IsPublished);
 
             return _mapper.Map<IEnumerable<Exam.Application.Dto.Exam.ExamDTO>>(exams);
+        }
+
+        public async Task<IEnumerable<Exam.Application.Dto.Student.StudentDTO>> GetCourseStudentsAsync(int courseId)
+        {
+            var enrollments = await _unitOfWork.Repository<CourseStudent>()
+                .FindAsync(cs => cs.CourseId == courseId, "Student");
+
+            var students = enrollments.Select(e => e.Student);
+            return _mapper.Map<IEnumerable<Exam.Application.Dto.Student.StudentDTO>>(students);
         }
 
         public async Task AssignInstructorToCourseAsync(int courseId, int instructorId)

@@ -36,7 +36,10 @@ namespace Exam.Infrastructure.Data.Configurations
             builder.HasIndex(es => new { es.StudentId, es.ExamId })
                 .IsUnique();
             // يمنع الطالب من دخول نفس الامتحان أكثر من مرة (محاولة واحدة)
+
+            // Performance optimizations (Indexing)
+            builder.HasIndex(es => es.ExamId);
+            builder.HasIndex(es => es.Status);
         }
     }
-
 }

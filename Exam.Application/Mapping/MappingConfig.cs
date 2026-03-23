@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Exam.Application.Dto.Identity;
 using Exam.Application.Dto.Choice;
 using ExamDTOs = Exam.Application.Dto.Exam;
@@ -10,6 +10,7 @@ using Exam.Application.Dto.Instructor;
 using Exam.Application.Dto.Course;
 using Exam.Application.Dto.Student;
 using Exam.Application.Dto.SubmitExam;
+using Exam.Domain.Enum;
 using System.Linq;
 
 namespace Exam.Application.Mapping
@@ -21,6 +22,10 @@ namespace Exam.Application.Mapping
             CreateMap<CreateUser, AppUser>()
                 .ForMember(dest => dest.UserName,
                            opt => opt.MapFrom(src => src.Email))
+                .ForMember(dest => dest.Email,
+                           opt => opt.MapFrom(src => src.Email))
+                .ForMember(dest => dest.UserType,
+                           opt => opt.MapFrom(src => src.UserType))
                 .ForMember(dest => dest.FirstName,
                            opt => opt.MapFrom(src => src.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? ""))
                 .ForMember(dest => dest.LastName,
@@ -69,9 +74,8 @@ namespace Exam.Application.Mapping
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type));
 
             CreateMap<QuestionWithChoicesDTO, Question>()
-                .ForMember(dest => dest.Choices, opt => opt.MapFrom(src => src.Choices));
-                // Choices يتم تحويلها تلقائياً بالاعتماد على ماب ChoiceCreateDTO
                 .ForMember(dest => dest.Choices, opt => opt.MapFrom(src => src.Choices))
+                // Choices يتم تحويلها تلقائياً بالاعتماد على ماب ChoiceCreateDTO
                 .ForMember(dest => dest.Exam, opt => opt.Ignore());
 
             CreateMap<Question, QuestionDTO>();
@@ -109,7 +113,7 @@ namespace Exam.Application.Mapping
 
             CreateMap<Choice, ChoiceReadDTO>()
                 .ForMember(dest => dest.IsCorrect, opt => opt.MapFrom(src => src.IsCorrectAnswer))
-                .ForMember(dest => dest.QuestionID, opt => opt.MapFrom(src => src.QuestionId));
+                .ForMember(dest => dest.QuestionId, opt => opt.MapFrom(src => src.QuestionId));
 
             CreateMap<Choice, Dto.Choice.ChoiceForStudentDTO>();
 
@@ -180,17 +184,6 @@ namespace Exam.Application.Mapping
                 .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student != null ? (src.Student.FirstName + " " + src.Student.LastName) : ""))
                 .ForMember(dest => dest.TotalGrade, opt => opt.MapFrom(src => src.Exam != null ? src.Exam.TotalGrade : 0));
 
-            CreateMap<global::Exam.Domain.Entities.Exam, ExamDTOs.ExamDTO>()
-                .ForMember(dest => dest.CourseId, opt => opt.MapFrom(src => src.CourseID))
-                .ForMember(dest => dest.InstructorId, opt => opt.MapFrom(src => src.InstructorID));
-
-            // =======================
-            // Exam Result Mapping
-            // =======================
-            CreateMap<ExamStudent, Dto.SubmitExam.ExamResultDTO>()
-                .ForMember(dest => dest.ExamName, opt => opt.MapFrom(src => src.Exam.Name))
-                .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student.FullName))
-                .ForMember(dest => dest.TotalGrade, opt => opt.MapFrom(src => src.Exam.TotalGrade));
         }
     }
 }

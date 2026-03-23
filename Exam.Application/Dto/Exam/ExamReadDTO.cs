@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,7 +23,10 @@ namespace Exam.Application.Dto.Exam
         public int TotalQuestions { get; set; }
         // عدد الأسئلة
 
-        public int TotalPoints { get; set; }
+        public int TotalGrade { get; set; }
         // الدرجة الكلية
+
+        public int PassingScore { get; set; }
+        // درجة النجاح
     }
 }

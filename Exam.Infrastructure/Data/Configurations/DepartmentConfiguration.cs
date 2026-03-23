@@ -20,6 +20,9 @@ namespace Exam.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(150);
             // اسم القسم إجباري
+
+            // Performance optimizations (Indexing)
+            builder.HasIndex(d => d.Name);
         }
     }
 }

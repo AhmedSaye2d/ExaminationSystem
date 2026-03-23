@@ -1,4 +1,4 @@
-﻿using Exam.Domain.Common;
+using Exam.Domain.Common;
 using Exam.Domain.Entities.Common;
 using Exam.Domain.Enum;
 
@@ -22,11 +22,14 @@ namespace Exam.Domain.Entities
         public HashSet<Choice> Choices { get; set; } = new();
         // اختيارات السؤال (تستخدم فقط في MCQ و True/False)
 
-        public int ExamId { get; set; }
-        public Exam Exam { get; set; }
+        public int? ExamId { get; set; }
+        public Exam? Exam { get; set; }
         // السؤال ينتمي لامتحان واحد محدد
 
         public int Grade { get; set; }
         // درجة السؤال (تستخدم في حساب النتيجة)
+
+        // ترتيب السؤال داخل الامتحان
+        public int Order { get; set; }
     }
 }

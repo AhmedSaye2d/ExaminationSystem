@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,5 +16,7 @@ namespace Exam.Application.Dto.Exam
         public int InstructorId { get; set; }
 
         public global::Exam.Domain.Entities.ExamSettings? Settings { get; set; }
+        public int TotalGrade { get; set; }
+        public int PassingScore { get; set; }
     }
 }

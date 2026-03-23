@@ -2,7 +2,7 @@ using Exam.Application.Dto.Course;
 using Exam.Application.Services.Interfaces.ICourseService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace Exam.Host.Controllers
 {
@@ -46,7 +46,7 @@ namespace Exam.Host.Controllers
         /// </summary>
         /// <param name="dto">Course creation data.</param>
         /// <returns>Success message.</returns>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Instructor")]
         [HttpPost("Create")]
         public async Task<IActionResult> Create([FromBody] CourseCreateDTO dto)
         {
@@ -89,8 +89,24 @@ namespace Exam.Host.Controllers
         [HttpGet("{courseId:int}/exams")]
         public async Task<IActionResult> GetCourseExams(int courseId)
         {
-            var exams = await _courseService.GetCourseExamsAsync(courseId);
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var role = User.FindFirstValue(ClaimTypes.Role)!;
+            
+            var exams = await _courseService.GetCourseExamsAsync(courseId, userId, role);
             return Ok(exams);
+        }
+
+        /// <summary>
+        /// Retrieve all students enrolled in a specific course.
+        /// </summary>
+        /// <param name="courseId">Course ID.</param>
+        /// <returns>A list of students enrolled in the course.</returns>
+        [HttpGet("{courseId:int}/students")]
+        [Authorize(Roles = "Admin,Instructor")]
+        public async Task<IActionResult> GetCourseStudents(int courseId)
+        {
+            var students = await _courseService.GetCourseStudentsAsync(courseId);
+            return Ok(students);
         }
 
         /// <summary>

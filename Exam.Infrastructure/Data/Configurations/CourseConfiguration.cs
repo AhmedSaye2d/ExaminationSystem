@@ -24,5 +24,9 @@ public class CourseConfiguration : IEntityTypeConfiguration<Course>
             .HasForeignKey(c => c.DepartmentId)
             .OnDelete(DeleteBehavior.Restrict);
         // علاقة القسم مع الكورسات (One-to-Many)
+
+        // Performance optimizations (Indexing)
+        builder.HasIndex(c => c.Code).IsUnique();
+        builder.HasIndex(c => c.DepartmentId);
     }
 }

@@ -1,4 +1,4 @@
-﻿using Exam.Infrastructure.Middleware;
+using Exam.Infrastructure.Middleware;
 using Exam.Infrastructure.DependencyInjection;
 using Exam.Application.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -18,11 +18,12 @@ builder.Services.AddSwaggerGen(c =>
     // Enable JWT Authentication
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
         Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Description = "JWT Authorization header using the Bearer scheme."
     });
 
     c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement

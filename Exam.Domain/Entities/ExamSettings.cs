@@ -1,32 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Exam.Domain.Entities
+﻿namespace Exam.Domain.Entities
 {
+    /// <summary>
+    /// Stored as Owned Entity inside Exams table (no separate table).
+    /// </summary>
     public class ExamSettings
     {
-       
-            public bool ShuffleQuestions { get; set; }
-            // هل يتم خلط ترتيب الأسئلة عشوائياً لكل طالب
-            // True = كل طالب يشوف الأسئلة بترتيب مختلف (يقلل الغش)
-            // False = نفس ترتيب الأسئلة لكل الطلاب
+        public bool ShuffleQuestions { get; set; } = false;
+        // هل يتم خلط ترتيب الأسئلة عشوائياً لكل طالب
 
-            public bool ShuffleChoices { get; set; }
-            // هل يتم خلط الاختيارات داخل كل سؤال
-            // يمنع أن تكون الإجابة الصحيحة دائمًا في نفس المكان (مثلاً الاختيار الأول)
+        public bool ShuffleChoices { get; set; } = false;
+        // هل يتم خلط الاختيارات داخل كل سؤال
 
-            public int DurationMinutes { get; set; }
-            // مدة الامتحان بالدقائق
-            // بعد انتهاء الوقت يتم غلق الامتحان تلقائياً أو تسليمه تلقائياً
+        public int DurationMinutes { get; set; } = 60;
+        // مدة الامتحان بالدقائق
 
-            public bool ShowResultAfterSubmit { get; set; }
+        public bool ShowResultAfterSubmit { get; set; } = true;
         // هل تظهر نتيجة الطالب مباشرة بعد تسليم الامتحان
-        // True = الطالب يرى الدرجة فوراً
-        // False = النتيجة تظهر لاحقاً بعد مراجعة المدرس
-        public bool AllowReview { get; set; }
-    }
 
+        public bool AllowReview { get; set; } = false;
+        // هل يُسمح للطالب بمراجعة إجاباته بعد التسليم
+
+        public int MaxAttempts { get; set; } = 1;
+        // أقصى عدد محاولات مسموح بها لكل طالب
+    }
 }

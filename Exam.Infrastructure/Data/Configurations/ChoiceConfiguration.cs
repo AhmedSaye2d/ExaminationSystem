@@ -37,6 +37,10 @@ namespace Exam.Infrastructure.Data.Configurations
             // كل Question ليه اختيارات كتير
             // وكل Choice تابع لسؤال واحد
             // ولو السؤال اتحذف تتحذف الاختيارات تلقائياً
+
+            // Performance optimizations (Indexing)
+            builder.HasIndex(c => c.QuestionId);
+            builder.HasIndex(c => c.IsCorrectAnswer);
         }
     }
 }

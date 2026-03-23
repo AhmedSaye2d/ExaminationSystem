@@ -1,9 +1,12 @@
-﻿using EntityFramework.Exceptions.SqlServer;
+using EntityFramework.Exceptions.SqlServer;
 using Exam.Domain.Entities.Identity;
 using Exam.Domain.Interface.Authentication;
 using Exam.Infrastructure.Data;
 using Exam.Infrastructure.Middleware;
 using Exam.Infrastructure.Repository.Authentication;
+using Exam.Infrastructure.Services;
+using Exam.Application.Services.Interfaces;
+using Exam.Infrastructure.BackgroundServices;
 using Exam.Infrastructure.Repository;
 using Exam.Domain;
 using Exam.Domain.Interface;
@@ -80,6 +83,11 @@ namespace Exam.Infrastructure.DependencyInjection
 
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+            // ===================== Background Services =====================
+            services.AddHostedService<ExamAutoSubmitService>();
 
             return services;
         }

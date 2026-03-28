@@ -2,6 +2,7 @@ using Exam.Infrastructure.Middleware;
 using Exam.Infrastructure.DependencyInjection;
 using Exam.Application.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
+using Exam.Infrastructure.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,37 +56,16 @@ var app = builder.Build();
 app.UseInfrastructure();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Seed Database
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<Exam.Infrastructure.Data.AppDbContext>();
-        await context.Database.MigrateAsync();
-
-        // Ensure roles are created
-        await Exam.Infrastructure.Data.DbSeeder.SeedRolesAndAdminAsync(services);
-        // Seed test data (Courses, Students, Instructors, Exams, etc)
-        await Exam.Infrastructure.Data.DbSeeder.SeedDataAsync(services);
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
-    }
-}
+// Database Initialization & Automatic Migrations
+await app.ApplyMigrationsAndSeedAsync();
 
 app.MapControllers();
 

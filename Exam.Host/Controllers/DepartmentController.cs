@@ -2,8 +2,6 @@ using Exam.Application.Dto.Department;
 using Exam.Application.Services.Interfaces.IDepartmentServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-
 namespace Exam.Host.Controllers
 {
     [Authorize]

@@ -42,7 +42,6 @@ namespace Exam.Infrastructure.Data.Configurations
             builder.HasIndex(ea => ea.QuestionId);
             builder.HasIndex(ea => ea.ChoiceId);
 
-            // 🔥 SECURE: Force unique answer per question in a session
             builder.HasIndex(ea => new { ea.ExamStudentId, ea.QuestionId })
                 .IsUnique();
         }

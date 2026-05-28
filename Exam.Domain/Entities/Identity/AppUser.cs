@@ -1,7 +1,5 @@
 using Exam.Domain.Enum;
 using Microsoft.AspNetCore.Identity;
-using System;
-using System.Collections.Generic;
 
 namespace Exam.Domain.Entities.Identity
 {

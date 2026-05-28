@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Exam.Domain.Enum;
 
 namespace Exam.Application.Dto.Student

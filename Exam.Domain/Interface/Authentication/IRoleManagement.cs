@@ -1,5 +1,4 @@
 ﻿using Exam.Domain.Entities.Identity;
-using System.Threading.Tasks;
 
 namespace Exam.Domain.Interface.Authentication
 {

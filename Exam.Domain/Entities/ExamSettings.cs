@@ -1,4 +1,4 @@
-﻿namespace Exam.Domain.Entities
+namespace Exam.Domain.Entities
 {
     /// <summary>
     /// Stored as Owned Entity inside Exams table (no separate table).
@@ -21,6 +21,6 @@
         // هل يُسمح للطالب بمراجعة إجاباته بعد التسليم
 
         public int MaxAttempts { get; set; } = 1;
-        // أقصى عدد محاولات مسموح بها لكل طالب
+        // أقصى عدد محاولات مسموح بها لكل طالب (0 تعني عدد غير محدود)
     }
 }

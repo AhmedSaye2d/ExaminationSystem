@@ -1,10 +1,7 @@
 using Exam.Application.Dto.Admin;
 using Exam.Application.Services.Interfaces;
-using Exam.Domain;
 using Exam.Domain.Entities;
 using Exam.Domain.Interface;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Exam.Application.Services.Implementation
 {

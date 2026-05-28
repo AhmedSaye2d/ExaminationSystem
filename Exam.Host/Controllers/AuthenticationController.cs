@@ -1,8 +1,8 @@
-﻿using Exam.Application.Dto.Identity;
+using Exam.Application.Dto.Common;
+using Exam.Application.Dto.Identity;
 using Exam.Application.Services.Interfaces.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Exam.Host.Controllers
 {
@@ -22,11 +22,13 @@ namespace Exam.Host.Controllers
         /// </summary>
         /// <param name="user">User registration information.</param>
         /// <returns>Result of the registration process.</returns>
+        [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] CreateUser user)
         {
             var res = await _authenticationService.CreateUser(user);
-            return res.Success ? Ok(res) : BadRequest(res);
+            var response = new ApiResponse<object>(res.Success, res.Success ? 200 : 400, res.Message, null, res.Errors);
+            return res.Success ? Ok(response) : BadRequest(response);
         }
 
         /// <summary>
@@ -34,6 +36,7 @@ namespace Exam.Host.Controllers
         /// </summary>
         /// <param name="user">User login credentials.</param>
         /// <returns>Authentication tokens if successful.</returns>
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] Login user)
         {

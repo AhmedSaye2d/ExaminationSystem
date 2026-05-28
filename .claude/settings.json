@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -X POST \"http://localhost:8000/api/v1/detect-cheating\" -F \"student_id=4\" -F \"exam_id=1\" -F \"file=@C:\\\\Users\\\\Administrator\\\\Pictures\\\\Screenshots\\\\Screenshot 2026-05-12 221934.png\" -H \"accept: application/json\")",
+      "Bash(curl -X GET \"http://localhost:8000/api/v1/health\")"
+    ]
+  }
+}

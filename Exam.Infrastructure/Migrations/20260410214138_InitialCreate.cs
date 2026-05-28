@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -83,7 +82,6 @@ namespace Exam.Infrastructure.Migrations
                     Discriminator = table.Column<string>(type: "nvarchar(13)", maxLength: 13, nullable: false),
                     DepartmentId = table.Column<int>(type: "int", nullable: true),
                     HireDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    GPA = table.Column<double>(type: "float", nullable: true, defaultValue: 0.0),
                     MajorId = table.Column<int>(type: "int", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -293,6 +291,8 @@ namespace Exam.Infrastructure.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CourseId = table.Column<int>(type: "int", nullable: false),
                     StudentId = table.Column<int>(type: "int", nullable: false),
+                    EnrollmentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
@@ -325,7 +325,6 @@ namespace Exam.Infrastructure.Migrations
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DueDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     TotalQuestions = table.Column<int>(type: "int", nullable: false),
-                    TotalPoints = table.Column<int>(type: "int", nullable: false),
                     Type = table.Column<int>(type: "int", nullable: false),
                     CourseID = table.Column<int>(type: "int", nullable: false),
                     InstructorID = table.Column<int>(type: "int", nullable: false),
@@ -334,7 +333,10 @@ namespace Exam.Infrastructure.Migrations
                     Settings_DurationMinutes = table.Column<int>(type: "int", nullable: false),
                     Settings_ShowResultAfterSubmit = table.Column<bool>(type: "bit", nullable: false),
                     Settings_AllowReview = table.Column<bool>(type: "bit", nullable: false),
+                    Settings_MaxAttempts = table.Column<int>(type: "int", nullable: false),
                     TotalGrade = table.Column<int>(type: "int", nullable: false),
+                    PassingScore = table.Column<int>(type: "int", nullable: false),
+                    IsPublished = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
@@ -366,7 +368,8 @@ namespace Exam.Infrastructure.Migrations
                     ExamId = table.Column<int>(type: "int", nullable: false),
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     SubmissionDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    IsSubmitted = table.Column<bool>(type: "bit", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
                     Score = table.Column<double>(type: "float", nullable: false),
                     IsPassed = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -399,8 +402,9 @@ namespace Exam.Infrastructure.Migrations
                     Text = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
                     Type = table.Column<int>(type: "int", nullable: false),
                     DifficultyLevel = table.Column<int>(type: "int", nullable: false),
-                    ExamId = table.Column<int>(type: "int", nullable: false),
+                    ExamId = table.Column<int>(type: "int", nullable: true),
                     Grade = table.Column<int>(type: "int", nullable: false),
+                    Order = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
@@ -413,7 +417,7 @@ namespace Exam.Infrastructure.Migrations
                         column: x => x.ExamId,
                         principalTable: "Exams",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -423,8 +427,12 @@ namespace Exam.Infrastructure.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ExamStudentId = table.Column<int>(type: "int", nullable: false),
+                    StudentId = table.Column<int>(type: "int", nullable: false),
+                    ExamId = table.Column<int>(type: "int", nullable: false),
                     Score = table.Column<double>(type: "float", nullable: false),
+                    Total = table.Column<double>(type: "float", nullable: false),
                     IsPassed = table.Column<bool>(type: "bit", nullable: false),
+                    CalculatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
@@ -433,11 +441,21 @@ namespace Exam.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_ExamResults", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_ExamResults_AspNetUsers_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_ExamResults_ExamStudents_ExamStudentId",
                         column: x => x.ExamStudentId,
                         principalTable: "ExamStudents",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ExamResults_Exams_ExamId",
+                        column: x => x.ExamId,
+                        principalTable: "Exams",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -472,6 +490,8 @@ namespace Exam.Infrastructure.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ExamStudentId = table.Column<int>(type: "int", nullable: false),
+                    StudentId = table.Column<int>(type: "int", nullable: false),
+                    ExamId = table.Column<int>(type: "int", nullable: false),
                     QuestionId = table.Column<int>(type: "int", nullable: false),
                     ChoiceId = table.Column<int>(type: "int", nullable: false),
                     WrittenAnswer = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -483,6 +503,11 @@ namespace Exam.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_ExamAnswers", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_ExamAnswers_AspNetUsers_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_ExamAnswers_Choices_ChoiceId",
                         column: x => x.ChoiceId,
                         principalTable: "Choices",
@@ -493,6 +518,11 @@ namespace Exam.Infrastructure.Migrations
                         principalTable: "ExamStudents",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ExamAnswers_Exams_ExamId",
+                        column: x => x.ExamId,
+                        principalTable: "Exams",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ExamAnswers_Questions_QuestionId",
                         column: x => x.QuestionId,
@@ -550,6 +580,11 @@ namespace Exam.Infrastructure.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Choices_IsCorrectAnswer",
+                table: "Choices",
+                column: "IsCorrectAnswer");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Choices_QuestionId",
                 table: "Choices",
                 column: "QuestionId");
@@ -564,6 +599,12 @@ namespace Exam.Infrastructure.Migrations
                 name: "IX_CourseInstructors_InstructorId",
                 table: "CourseInstructors",
                 column: "InstructorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Courses_Code",
+                table: "Courses",
+                column: "Code",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Courses_DepartmentId",
@@ -581,9 +622,19 @@ namespace Exam.Infrastructure.Migrations
                 column: "StudentId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Departments_Name",
+                table: "Departments",
+                column: "Name");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ExamAnswers_ChoiceId",
                 table: "ExamAnswers",
                 column: "ChoiceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExamAnswers_ExamId",
+                table: "ExamAnswers",
+                column: "ExamId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ExamAnswers_ExamStudentId",
@@ -591,14 +642,35 @@ namespace Exam.Infrastructure.Migrations
                 column: "ExamStudentId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ExamAnswers_ExamStudentId_QuestionId",
+                table: "ExamAnswers",
+                columns: new[] { "ExamStudentId", "QuestionId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ExamAnswers_QuestionId",
                 table: "ExamAnswers",
                 column: "QuestionId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ExamAnswers_StudentId",
+                table: "ExamAnswers",
+                column: "StudentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExamResults_ExamId",
+                table: "ExamResults",
+                column: "ExamId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ExamResults_ExamStudentId",
                 table: "ExamResults",
                 column: "ExamStudentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExamResults_StudentId",
+                table: "ExamResults",
+                column: "StudentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Exams_CourseID",
@@ -611,9 +683,19 @@ namespace Exam.Infrastructure.Migrations
                 column: "InstructorID");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Exams_StartDate_DueDate",
+                table: "Exams",
+                columns: new[] { "StartDate", "DueDate" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ExamStudents_ExamId",
                 table: "ExamStudents",
                 column: "ExamId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExamStudents_Status",
+                table: "ExamStudents",
+                column: "Status");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ExamStudents_StudentId_ExamId",
@@ -625,6 +707,11 @@ namespace Exam.Infrastructure.Migrations
                 name: "IX_Questions_ExamId",
                 table: "Questions",
                 column: "ExamId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Questions_Type",
+                table: "Questions",
+                column: "Type");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_UserId",

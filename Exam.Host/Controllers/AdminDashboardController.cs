@@ -1,4 +1,5 @@
 using Exam.Application.Services.Interfaces;
+using Exam.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,7 +7,7 @@ namespace Exam.API.Controllers
 {
     [ApiController]
     [Route("api/admin/dashboard")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = AppRoles.Admin)]
     public class AdminDashboardController : ControllerBase
     {
         private readonly IAdminDashboardService _dashboardService;

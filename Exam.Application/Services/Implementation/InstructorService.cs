@@ -4,12 +4,10 @@ using Exam.Application.Dto.Instructor;
 using Exam.Application.Exceptions;
 using Exam.Application.Services.Interfaces;
 using Exam.Domain.Entities;
+using Exam.Domain.Entities.Identity;
 using Exam.Domain.Enum;
 using Exam.Domain.Interface;
-using Exam.Domain.Entities.Identity;
 using Microsoft.AspNetCore.Identity;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Exam.Application.Services.Implementation
 {

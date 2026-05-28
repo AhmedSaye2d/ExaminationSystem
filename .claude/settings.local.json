@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tasklist)",
+      "Bash(findstr 14828)",
+      "Bash(curl -X POST \"http://localhost:8000/api/v1/detect-cheating\" -F \"student_id=4\" -F \"exam_id=1\" -F \"Frame=@\"C:/Users/Administrator/Pictures/\" -H \"accept: application/json\" -v)"
+    ]
+  }
+}

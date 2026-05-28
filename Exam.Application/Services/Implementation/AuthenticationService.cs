@@ -5,8 +5,7 @@ using Exam.Application.Services.Interfaces.Authentication;
 using Exam.Domain.Entities.Identity;
 using Exam.Domain.Interface.Authentication;
 using FluentValidation;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace Exam.Application.Services.Implementation
 {
@@ -40,11 +39,10 @@ namespace Exam.Application.Services.Implementation
                 return ServiceResponse.Fail(validation.Errors.First().ErrorMessage);
 
             var appUser = _mapper.Map<AppUser>(user);
-            
-            // 🔥 SECURE: Always default newly registered users to Student
-            // Do not trust the UserType property from the incoming DTO
-            appUser.UserType = Exam.Domain.Enum.UserType.Student;
-            
+
+            // Force the UserType from the DTO to ensure it's not overwritten
+            appUser.UserType = user.UserType;
+
             var result = await _userManagement.CreateUser(appUser, user.Password);
 
             if (!result.Succeeded)
@@ -78,16 +76,25 @@ namespace Exam.Application.Services.Implementation
             string token = _tokenManagement.GenerateToken(claims);
             string refreshToken = _tokenManagement.GetRefreshToken();
 
-            // 🔥 الحل هنا
+            // Store refresh token
             int updated = await _tokenManagement.UpdateRefreshToken(appUser.Id, refreshToken);
-
-            // لو مفيش record قبل كده → Insert
             if (updated == 0)
             {
                 await _tokenManagement.AddRefreshToken(appUser.Id, refreshToken);
             }
 
-            return new LoginResponse(true, "Login successful", token, refreshToken);
+            // Extract role and ensure it's lowercase for the frontend
+            var role = claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value?.ToLower();
+
+            return new LoginResponse(
+                Success: true,
+                Message: "Login successful",
+                Token: token,
+                RefreshToken: refreshToken,
+                Name: appUser.FullName,
+                Role: role ?? string.Empty,
+                Email: appUser.Email!
+            );
         }
 
         // ================= Refresh Token =================
@@ -116,10 +123,17 @@ namespace Exam.Application.Services.Implementation
                 await _tokenManagement.AddRefreshToken(appUser.Id, newRefreshToken);
             }
 
-            return new LoginResponse(true, "Token refreshed", newToken, newRefreshToken);
+            var role = claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value?.ToLower();
+
+            return new LoginResponse(
+                Success: true,
+                Message: "Token refreshed",
+                Token: newToken,
+                RefreshToken: newRefreshToken,
+                Name: appUser.FullName,
+                Role: role ?? string.Empty,
+                Email: appUser.Email!
+            );
         }
-
-
     }
 }
-

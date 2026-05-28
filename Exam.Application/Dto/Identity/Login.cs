@@ -1,6 +1,6 @@
 ﻿namespace Exam.Application.Dto.Identity
 {
-    public class Login:BaseModel
+    public class Login : BaseModel
     {
 
     }

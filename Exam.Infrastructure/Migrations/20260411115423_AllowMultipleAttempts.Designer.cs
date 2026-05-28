@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Exam.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260310213055_RemoveExamQuestion")]
-    partial class RemoveExamQuestion
+    [Migration("20260411115423_AllowMultipleAttempts")]
+    partial class AllowMultipleAttempts
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -57,6 +57,8 @@ namespace Exam.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("IsCorrectAnswer");
 
                     b.HasIndex("QuestionId");
 
@@ -106,6 +108,9 @@ namespace Exam.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
 
                     b.HasIndex("DepartmentId");
 
@@ -162,8 +167,14 @@ namespace Exam.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime>("EnrollmentDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<int>("StudentId")
                         .HasColumnType("int");
@@ -207,6 +218,8 @@ namespace Exam.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Name");
+
                     b.ToTable("Departments");
                 });
 
@@ -245,13 +258,13 @@ namespace Exam.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<int>("PassingScore")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("TotalGrade")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TotalPoints")
                         .HasColumnType("int");
 
                     b.Property<int>("TotalQuestions")
@@ -268,6 +281,8 @@ namespace Exam.Infrastructure.Migrations
                     b.HasIndex("CourseID");
 
                     b.HasIndex("InstructorID");
+
+                    b.HasIndex("StartDate", "DueDate");
 
                     b.ToTable("Exams");
                 });
@@ -286,6 +301,9 @@ namespace Exam.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("ExamId")
+                        .HasColumnType("int");
+
                     b.Property<int>("ExamStudentId")
                         .HasColumnType("int");
 
@@ -293,6 +311,9 @@ namespace Exam.Infrastructure.Migrations
                         .HasColumnType("bit");
 
                     b.Property<int>("QuestionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StudentId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -305,9 +326,16 @@ namespace Exam.Infrastructure.Migrations
 
                     b.HasIndex("ChoiceId");
 
+                    b.HasIndex("ExamId");
+
                     b.HasIndex("ExamStudentId");
 
                     b.HasIndex("QuestionId");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("ExamStudentId", "QuestionId")
+                        .IsUnique();
 
                     b.ToTable("ExamAnswers");
                 });
@@ -320,8 +348,14 @@ namespace Exam.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CalculatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("ExamId")
+                        .HasColumnType("int");
 
                     b.Property<int>("ExamStudentId")
                         .HasColumnType("int");
@@ -335,12 +369,22 @@ namespace Exam.Infrastructure.Migrations
                     b.Property<double>("Score")
                         .HasColumnType("float");
 
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("Total")
+                        .HasColumnType("float");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ExamId");
+
                     b.HasIndex("ExamStudentId");
+
+                    b.HasIndex("StudentId");
 
                     b.ToTable("ExamResults");
                 });
@@ -356,6 +400,9 @@ namespace Exam.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("ExamId")
                         .HasColumnType("int");
 
@@ -365,14 +412,14 @@ namespace Exam.Infrastructure.Migrations
                     b.Property<bool>("IsPassed")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsSubmitted")
-                        .HasColumnType("bit");
-
                     b.Property<double>("Score")
                         .HasColumnType("float");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<int>("StudentId")
                         .HasColumnType("int");
@@ -387,8 +434,9 @@ namespace Exam.Infrastructure.Migrations
 
                     b.HasIndex("ExamId");
 
-                    b.HasIndex("StudentId", "ExamId")
-                        .IsUnique();
+                    b.HasIndex("Status");
+
+                    b.HasIndex("StudentId");
 
                     b.ToTable("ExamStudents");
                 });
@@ -557,7 +605,7 @@ namespace Exam.Infrastructure.Migrations
                     b.Property<int>("DifficultyLevel")
                         .HasColumnType("int");
 
-                    b.Property<int>("ExamId")
+                    b.Property<int?>("ExamId")
                         .HasColumnType("int");
 
                     b.Property<int>("Grade")
@@ -565,6 +613,9 @@ namespace Exam.Infrastructure.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
 
                     b.Property<string>("Text")
                         .IsRequired()
@@ -580,6 +631,8 @@ namespace Exam.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ExamId");
+
+                    b.HasIndex("Type");
 
                     b.ToTable("Questions");
                 });
@@ -736,11 +789,6 @@ namespace Exam.Infrastructure.Migrations
                 {
                     b.HasBaseType("Exam.Domain.Entities.Identity.AppUser");
 
-                    b.Property<double>("GPA")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("float")
-                        .HasDefaultValue(0.0);
-
                     b.Property<int>("MajorId")
                         .HasColumnType("int");
 
@@ -834,6 +882,9 @@ namespace Exam.Infrastructure.Migrations
                             b1.Property<int>("DurationMinutes")
                                 .HasColumnType("int");
 
+                            b1.Property<int>("MaxAttempts")
+                                .HasColumnType("int");
+
                             b1.Property<bool>("ShowResultAfterSubmit")
                                 .HasColumnType("bit");
 
@@ -867,6 +918,12 @@ namespace Exam.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("Exam.Domain.Entities.Exam", "Exam")
+                        .WithMany()
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("Exam.Domain.Entities.ExamStudent", "ExamStudent")
                         .WithMany("ExamAnswers")
                         .HasForeignKey("ExamStudentId")
@@ -879,22 +936,48 @@ namespace Exam.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("Exam.Domain.Entities.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Choice");
+
+                    b.Navigation("Exam");
 
                     b.Navigation("ExamStudent");
 
                     b.Navigation("Question");
+
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("Exam.Domain.Entities.ExamResult", b =>
                 {
+                    b.HasOne("Exam.Domain.Entities.Exam", "Exam")
+                        .WithMany()
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("Exam.Domain.Entities.ExamStudent", "ExamStudent")
                         .WithMany()
                         .HasForeignKey("ExamStudentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Exam.Domain.Entities.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Exam");
+
                     b.Navigation("ExamStudent");
+
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("Exam.Domain.Entities.ExamStudent", b =>
@@ -932,8 +1015,7 @@ namespace Exam.Infrastructure.Migrations
                     b.HasOne("Exam.Domain.Entities.Exam", "Exam")
                         .WithMany("Questions")
                         .HasForeignKey("ExamId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Exam");
                 });

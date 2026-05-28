@@ -1,4 +1,4 @@
-﻿using Exam.Application.Mapping;
+using Exam.Application.Mapping;
 using Exam.Application.Services.Implementation;
 using Exam.Application.Services.Interfaces;
 using Exam.Application.Services.Interfaces.Authentication;
@@ -32,6 +32,7 @@ namespace Exam.Application.DependencyInjection
             services.AddScoped<IStudentService, StudentService>();
             services.AddScoped<IStudentExamService, StudentExamService>();
             services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+            services.AddScoped<IReportingService, ReportingService>();
 
             return services;
 

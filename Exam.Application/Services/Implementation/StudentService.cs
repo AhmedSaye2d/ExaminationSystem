@@ -5,9 +5,7 @@ using Exam.Application.Dto.Exam;
 using Exam.Application.Dto.Student;
 using Exam.Application.Dto.SubmitExam;
 using Exam.Application.Exceptions;
-using Exam.Application.Services.Interfaces;
 using Exam.Application.Services.Interfaces.IStudentServices;
-using Exam.Domain;
 using Exam.Domain.Entities;
 using Exam.Domain.Entities.Identity;
 using Exam.Domain.Enum;
@@ -47,7 +45,7 @@ namespace Exam.Application.Services.Implementation
                 .GetPagedAsync(
                     page,
                     pageSize,
-                    predicate: !string.IsNullOrEmpty(search) 
+                    predicate: !string.IsNullOrEmpty(search)
                         ? s => (s.FirstName + " " + s.LastName).Contains(search) || s.Email!.Contains(search)
                         : null,
                     includes: "CourseStudents.Course"
@@ -62,10 +60,10 @@ namespace Exam.Application.Services.Implementation
         public async Task<StudentDTO> GetByIdAsync(int id)
         {
             var studentRepo = _unitOfWork.Repository<Student>();
-            
+
             // جلب الطالب مع تحميل الكورسات المرتبطة به باستخدام Include
             var students = await studentRepo.FindAsync(
-                s => s.Id == id && !s.IsDeleted, 
+                s => s.Id == id && !s.IsDeleted,
                 "CourseStudents.Course");
 
             var student = students.FirstOrDefault();
@@ -100,8 +98,8 @@ namespace Exam.Application.Services.Implementation
             var result = await _userManager.CreateAsync(student, dto.Password);
             if (!result.Succeeded)
             {
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                return ServiceResponse.Fail(errors);
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                return ServiceResponse.Fail("Failed to create student", errors);
             }
 
             // Assign to Student Role
@@ -165,10 +163,10 @@ namespace Exam.Application.Services.Implementation
         public async Task<IEnumerable<CourseDTO>> GetStudentCoursesAsync(int studentId)
         {
             var studentRepo = _unitOfWork.Repository<Student>();
-            
+
             // جلب الطالب مع تحميل الكورسات المرتبطة به
             var studentSessions = await studentRepo.FindAsync(
-                s => s.Id == studentId && !s.IsDeleted, 
+                s => s.Id == studentId && !s.IsDeleted,
                 "CourseStudents.Course");
 
             var student = studentSessions.FirstOrDefault();
@@ -195,7 +193,7 @@ namespace Exam.Application.Services.Implementation
                 throw new ItemNotFoundException("Course not found");
 
             var enrollmentRepo = _unitOfWork.Repository<CourseStudent>();
-            
+
             // التأكد من أن الطالب لم يسجل في هذا الكورس مسبقاً
             var existingEnrollment = await enrollmentRepo.FindAsync(
                 cs => cs.StudentId == studentId && cs.CourseId == courseId);
@@ -219,7 +217,7 @@ namespace Exam.Application.Services.Implementation
             // Get IDs of courses the student is enrolled in
             var enrollments = await _unitOfWork.Repository<CourseStudent>()
                 .FindAsync(cs => cs.StudentId == studentId);
-            
+
             var courseIds = enrollments.Select(cs => cs.CourseId).ToList();
 
             // Get published exams for these courses
@@ -235,6 +233,14 @@ namespace Exam.Application.Services.Implementation
                 .FindAsync(es => es.StudentId == studentId, "Exam", "Student");
 
             return _mapper.Map<IEnumerable<ExamResultDTO>>(results);
+        }
+
+        public async Task<(IEnumerable<ExamResultDTO> Items, int TotalCount)> GetStudentResultsPagedAsync(int studentId, int page, int pageSize)
+        {
+            var (items, totalCount) = await _unitOfWork.Repository<ExamStudent>()
+                .GetPagedAsync(page, pageSize, x => x.StudentId == studentId, true, "Exam", "Student");
+
+            return (_mapper.Map<IEnumerable<ExamResultDTO>>(items), totalCount);
         }
     }
 }

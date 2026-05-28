@@ -1,5 +1,3 @@
-using System;
-
 namespace Exam.Domain.Entities.Common
 {
     public abstract class BaseEntity<TId>

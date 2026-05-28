@@ -1,11 +1,11 @@
-﻿using Exam.Domain.Entities.Identity;
+using Exam.Domain.Constants;
+using Exam.Domain.Entities.Identity;
+using Exam.Domain.Enum;
 using Exam.Domain.Interface.Authentication;
 using Exam.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Exam.Infrastructure.Repository.Authentication
 {
@@ -31,7 +31,7 @@ namespace Exam.Infrastructure.Repository.Authentication
 
             if (result.Succeeded)
             {
-                var roleName = user.UserType.ToString();
+                var roleName = GetRoleName(user.UserType);
                 await _userManager.AddToRoleAsync(user, roleName);
             }
 
@@ -73,7 +73,18 @@ namespace Exam.Infrastructure.Repository.Authentication
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email!),
                 new Claim("FullName", user.FullName),
-                new Claim(ClaimTypes.Role, roleName!)
+                new Claim(ClaimTypes.Role, roleName?.ToLower() ?? string.Empty)
+            };
+        }
+
+        private string GetRoleName(UserType userType)
+        {
+            return userType switch
+            {
+                UserType.Admin => AppRoles.Admin,
+                UserType.Student => AppRoles.Student,
+                UserType.Instructor => AppRoles.Instructor,
+                _ => AppRoles.Student
             };
         }
 

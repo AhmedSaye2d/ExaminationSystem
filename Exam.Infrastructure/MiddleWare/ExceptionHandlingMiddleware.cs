@@ -1,9 +1,9 @@
+using Exam.Application.Exceptions;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
-using Exam.Application.Exceptions;
 
 namespace Exam.Infrastructure.Middleware
 {
@@ -70,7 +70,7 @@ namespace Exam.Infrastructure.Middleware
                 await HandleDbExceptionAsync(context, ex);
             }
 
-         
+
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An unexpected error occurred: {Message}", ex.Message);
@@ -129,15 +129,13 @@ namespace Exam.Infrastructure.Middleware
             context.Response.StatusCode = statusCode;
             context.Response.ContentType = "application/json";
 
-            var response = new
-            {
-                success = false,
-                statusCode,
-                error = message
-            };
+            var response = Exam.Application.Dto.Common.ApiResponse.FailureResponse(message, statusCode);
 
             await context.Response.WriteAsync(
-                JsonSerializer.Serialize(response));
+                JsonSerializer.Serialize(response, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                }));
         }
     }
 }

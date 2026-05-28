@@ -52,8 +52,8 @@ namespace Exam.Infrastructure.BackgroundServices
             var questionRepo = unitOfWork.Repository<Question>();
             var examAnswerRepo = unitOfWork.Repository<ExamAnswer>();
 
-            // Find all in-progress sessions with necessary details
-            var activeSessions = await examStudentRepo.FindAsync(
+            // Find all in-progress sessions with necessary details (Use tracking to avoid identity conflict on Exam entity)
+            var activeSessions = await examStudentRepo.FindWithTrackingAsync(
                 es => es.Status == ExamStatus.InProgress,
                 "Exam"
             );
@@ -87,7 +87,7 @@ namespace Exam.Infrastructure.BackgroundServices
                 session.Score = totalScore;
                 session.Status = ExamStatus.Expired;
                 session.SubmissionDate = now;
-                
+
                 // Consistency: Use PassingScore logic
                 session.IsPassed = session.Exam.PassingScore > 0
                     ? totalScore >= session.Exam.PassingScore

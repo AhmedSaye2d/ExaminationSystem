@@ -337,6 +337,87 @@ namespace Exam.Infrastructure.Migrations
                     b.ToTable("ExamAnswers");
                 });
 
+            modelBuilder.Entity("Exam.Domain.Entities.ExamProctoringSummary", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EndedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ExamId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ExamTitle")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ExtraPersonCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FinalRiskLevel")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<double>("FinalScore")
+                        .HasColumnType("float");
+
+                    b.Property<int>("GazeViolationCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("HeadViolationCount")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsFlagged")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LongGapCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NoFaceCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PhoneDetectionCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StudentName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("SuspiciousTime")
+                        .HasColumnType("float");
+
+                    b.Property<int>("TotalViolations")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FinalRiskLevel");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("ExamId", "StudentId");
+
+                    b.ToTable("ExamProctoringSummaries");
+                });
+
             modelBuilder.Entity("Exam.Domain.Entities.ExamResult", b =>
                 {
                     b.Property<int>("Id")
@@ -433,8 +514,7 @@ namespace Exam.Infrastructure.Migrations
 
                     b.HasIndex("Status");
 
-                    b.HasIndex("StudentId", "ExamId")
-                        .IsUnique();
+                    b.HasIndex("StudentId");
 
                     b.ToTable("ExamStudents");
                 });
@@ -587,6 +667,82 @@ namespace Exam.Infrastructure.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("Exam.Domain.Entities.ProctoringLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Cheating")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CurrentEvent")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EventsJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EvidenceImagePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ExamId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EyeStatus")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("FacePresent")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("HeadStatus")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PersonCount")
+                        .HasColumnType("int");
+
+                    b.Property<double>("PhoneConfidence")
+                        .HasColumnType("float");
+
+                    b.Property<bool>("PhoneDetected")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RiskLevel")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("SuspiciousTime")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<double>("TotalScore")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RiskLevel");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("ExamId", "StudentId", "CreatedAt");
+
+                    b.ToTable("ProctoringLogs");
                 });
 
             modelBuilder.Entity("Exam.Domain.Entities.Question", b =>
@@ -951,6 +1107,25 @@ namespace Exam.Infrastructure.Migrations
                     b.Navigation("Student");
                 });
 
+            modelBuilder.Entity("Exam.Domain.Entities.ExamProctoringSummary", b =>
+                {
+                    b.HasOne("Exam.Domain.Entities.Exam", "Exam")
+                        .WithMany()
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Exam.Domain.Entities.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Exam");
+
+                    b.Navigation("Student");
+                });
+
             modelBuilder.Entity("Exam.Domain.Entities.ExamResult", b =>
                 {
                     b.HasOne("Exam.Domain.Entities.Exam", "Exam")
@@ -1006,6 +1181,25 @@ namespace Exam.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Exam.Domain.Entities.ProctoringLog", b =>
+                {
+                    b.HasOne("Exam.Domain.Entities.Exam", "Exam")
+                        .WithMany()
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Exam.Domain.Entities.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Exam");
+
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("Exam.Domain.Entities.Question", b =>

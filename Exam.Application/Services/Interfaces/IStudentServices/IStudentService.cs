@@ -1,4 +1,4 @@
-﻿using Exam.Application.Dto.Common;
+using Exam.Application.Dto.Common;
 using Exam.Application.Dto.Course;
 using Exam.Application.Dto.Exam;
 using Exam.Application.Dto.Student;
@@ -22,6 +22,7 @@ namespace Exam.Application.Services.Interfaces.IStudentServices
         Task<IEnumerable<CourseDTO>> GetStudentCoursesAsync(int studentId);
         Task<IEnumerable<ExamDTO>> GetStudentExamsAsync(int studentId);
         Task<IEnumerable<ExamResultDTO>> GetStudentResultsAsync(int studentId);
+        Task<(IEnumerable<ExamResultDTO> Items, int TotalCount)> GetStudentResultsPagedAsync(int studentId, int page, int pageSize);
         Task<ServiceResponse> EnrollCourseAsync(int studentId, int courseId);
     }
 }

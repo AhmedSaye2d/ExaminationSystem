@@ -1,5 +1,6 @@
 using Exam.Application.Dto.Course;
 using Exam.Application.Services.Interfaces.ICourseService;
+using Exam.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -42,11 +43,11 @@ namespace Exam.Host.Controllers
         }
 
         /// <summary>
-        /// [Admin Only] Create a new course.
+        /// [Admin/Instructor View] Create a new course.
         /// </summary>
         /// <param name="dto">Course creation data.</param>
         /// <returns>Success message.</returns>
-        [Authorize(Roles = "Admin,Instructor")]
+        [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Instructor)]
         [HttpPost("Create")]
         public async Task<IActionResult> Create([FromBody] CourseCreateDTO dto)
         {
@@ -60,7 +61,7 @@ namespace Exam.Host.Controllers
         /// <param name="id">Course ID to update.</param>
         /// <param name="dto">Updated course data.</param>
         /// <returns>Success message.</returns>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = AppRoles.Admin)]
         [HttpPut("Update/{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] CourseCreateDTO dto)
         {
@@ -73,7 +74,7 @@ namespace Exam.Host.Controllers
         /// </summary>
         /// <param name="id">Course ID to delete.</param>
         /// <returns>Success message.</returns>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = AppRoles.Admin)]
         [HttpDelete("Delete/{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -91,7 +92,7 @@ namespace Exam.Host.Controllers
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var role = User.FindFirstValue(ClaimTypes.Role)!;
-            
+
             var exams = await _courseService.GetCourseExamsAsync(courseId, userId, role);
             return Ok(exams);
         }
@@ -102,7 +103,7 @@ namespace Exam.Host.Controllers
         /// <param name="courseId">Course ID.</param>
         /// <returns>A list of students enrolled in the course.</returns>
         [HttpGet("{courseId:int}/students")]
-        [Authorize(Roles = "Admin,Instructor")]
+        [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Instructor)]
         public async Task<IActionResult> GetCourseStudents(int courseId)
         {
             var students = await _courseService.GetCourseStudentsAsync(courseId);
@@ -115,7 +116,7 @@ namespace Exam.Host.Controllers
         /// <param name="courseId">Course ID.</param>
         /// <param name="instructorId">Instructor ID to assign.</param>
         /// <returns>Success message.</returns>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = AppRoles.Admin)]
         [HttpPost("{courseId:int}/assign-instructor")]
         public async Task<IActionResult> AssignInstructor(int courseId, [FromQuery] int instructorId)
         {

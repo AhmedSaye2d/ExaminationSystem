@@ -1,5 +1,3 @@
-using System;
-
 namespace Exam.Domain.Enum
 {
     public enum ExamStatus

@@ -1,5 +1,3 @@
-using System;
-
 namespace Exam.Application.Dto.Exam
 {
     public class InstructorExamResultDTO

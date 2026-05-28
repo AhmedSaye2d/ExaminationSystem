@@ -1,8 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Exam.Domain.Entities.Identity;
+using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
-using Exam.Domain.Entities.Identity;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Exam.Domain.Interface.Authentication
 {

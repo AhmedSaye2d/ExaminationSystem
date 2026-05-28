@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Exam.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260322221247_MakeExamIdNullable")]
-    partial class MakeExamIdNullable
+    [Migration("20260510211511_UpdateProctoringLogGranular")]
+    partial class UpdateProctoringLogGranular
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -267,9 +267,6 @@ namespace Exam.Infrastructure.Migrations
                     b.Property<int>("TotalGrade")
                         .HasColumnType("int");
 
-                    b.Property<int>("TotalPoints")
-                        .HasColumnType("int");
-
                     b.Property<int>("TotalQuestions")
                         .HasColumnType("int");
 
@@ -336,6 +333,9 @@ namespace Exam.Infrastructure.Migrations
                     b.HasIndex("QuestionId");
 
                     b.HasIndex("StudentId");
+
+                    b.HasIndex("ExamStudentId", "QuestionId")
+                        .IsUnique();
 
                     b.ToTable("ExamAnswers");
                 });
@@ -436,8 +436,7 @@ namespace Exam.Infrastructure.Migrations
 
                     b.HasIndex("Status");
 
-                    b.HasIndex("StudentId", "ExamId")
-                        .IsUnique();
+                    b.HasIndex("StudentId");
 
                     b.ToTable("ExamStudents");
                 });
@@ -590,6 +589,68 @@ namespace Exam.Infrastructure.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("Exam.Domain.Entities.ProctoringLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CurrentEvent")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ExamId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EyeStatus")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("FacePresent")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("HeadStatus")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PersonCount")
+                        .HasColumnType("int");
+
+                    b.Property<double>("PhoneConfidence")
+                        .HasColumnType("float");
+
+                    b.Property<bool>("PhoneDetected")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RiskLevel")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<double>("TotalScore")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExamId");
+
+                    b.HasIndex("StudentId");
+
+                    b.ToTable("ProctoringLogs");
                 });
 
             modelBuilder.Entity("Exam.Domain.Entities.Question", b =>
@@ -1009,6 +1070,25 @@ namespace Exam.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Exam.Domain.Entities.ProctoringLog", b =>
+                {
+                    b.HasOne("Exam.Domain.Entities.Exam", "Exam")
+                        .WithMany()
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Exam.Domain.Entities.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Exam");
+
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("Exam.Domain.Entities.Question", b =>

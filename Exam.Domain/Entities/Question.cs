@@ -1,4 +1,3 @@
-using Exam.Domain.Common;
 using Exam.Domain.Entities.Common;
 using Exam.Domain.Enum;
 

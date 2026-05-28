@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Exam.Application.Dto.Question;
 
 namespace Exam.Application.Dto.SubmitExam

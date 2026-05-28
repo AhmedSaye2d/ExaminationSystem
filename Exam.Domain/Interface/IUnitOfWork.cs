@@ -1,7 +1,3 @@
-using System;
-using System.Threading.Tasks;
-using Exam.Domain;
-
 namespace Exam.Domain.Interface
 {
     public interface IUnitOfWork : IDisposable

@@ -1,19 +1,19 @@
 using Exam.Application.Dto.Choice;
 using Exam.Application.Services.Interfaces.IChoiceServices;
+using Exam.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization; // Ensure this is present for [Authorize]
 
 namespace Exam.Host.Controllers
 {
-    [Authorize] // This is already present. The instruction implies adding it if missing, or adding role restrictions.
+    [Authorize]
     [ApiController]
-    [Route("api/choices")] // Keep original route
-    public class ChoiceController : ControllerBase // Keep original class name
+    [Route("api/choices")]
+    public class ChoiceController : ControllerBase
     {
         private readonly IChoiceService _choiceService;
 
-        public ChoiceController(IChoiceService choiceService) // Keep original constructor name
+        public ChoiceController(IChoiceService choiceService)
         {
             _choiceService = choiceService;
         }
@@ -48,7 +48,7 @@ namespace Exam.Host.Controllers
         /// <param name="dto">Choice details.</param>
         /// <returns>Success message.</returns>
         [HttpPost("Create/{questionId:int}")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> Create(int questionId, [FromBody] ChoiceCreateDTO dto)
         {
             await _choiceService.CreateAsync(questionId, dto);
@@ -62,7 +62,7 @@ namespace Exam.Host.Controllers
         /// <param name="choices">List of choices to add.</param>
         /// <returns>Success message.</returns>
         [HttpPost("AddRange/{questionId:int}")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> AddRange(int questionId, [FromBody] IEnumerable<ChoiceCreateDTO> choices)
         {
             await _choiceService.AddRangeAsync(questionId, choices);
@@ -76,7 +76,7 @@ namespace Exam.Host.Controllers
         /// <param name="dto">Updated choice details.</param>
         /// <returns>Success message.</returns>
         [HttpPut("Update/{id:int}")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> Update(int id, [FromBody] ChoiceCreateDTO dto)
         {
             await _choiceService.UpdateAsync(id, dto);
@@ -89,7 +89,7 @@ namespace Exam.Host.Controllers
         /// <param name="id">Choice ID to delete.</param>
         /// <returns>Success message.</returns>
         [HttpDelete("Delete/{id:int}")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> Delete(int id)
         {
             await _choiceService.DeleteAsync(id);
@@ -102,7 +102,7 @@ namespace Exam.Host.Controllers
         /// <param name="ids">List of IDs to delete.</param>
         /// <returns>Success message.</returns>
         [HttpDelete("DeleteRange")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> DeleteRange([FromBody] IEnumerable<int> ids)
         {
             await _choiceService.DeleteRangeAsync(ids);

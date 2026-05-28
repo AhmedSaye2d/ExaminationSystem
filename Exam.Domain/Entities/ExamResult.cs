@@ -1,6 +1,4 @@
-﻿using Exam.Domain.Common;
-using Exam.Domain.Entities.Common;
-using Exam.Domain.Enum;
+﻿using Exam.Domain.Entities.Common;
 namespace Exam.Domain.Entities
 {
     public class ExamResult : BaseEntity

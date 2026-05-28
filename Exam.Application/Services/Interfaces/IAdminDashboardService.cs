@@ -1,5 +1,4 @@
 using Exam.Application.Dto.Admin;
-using System.Threading.Tasks;
 
 namespace Exam.Application.Services.Interfaces
 {

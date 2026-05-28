@@ -1,8 +1,8 @@
 using Exam.Application.Dto.Instructor;
 using Exam.Application.Services.Interfaces;
+using Exam.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 
 namespace Exam.Host.Controllers
 {
@@ -46,7 +46,7 @@ namespace Exam.Host.Controllers
         /// </summary>
         /// <param name="dto">Instructor creation data.</param>
         /// <returns>Result of the creation process.</returns>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = AppRoles.Admin)]
         [HttpPost("Create")]
         public async Task<IActionResult> Create([FromBody] InstructorCreateDTO dto)
         {
@@ -60,7 +60,7 @@ namespace Exam.Host.Controllers
         /// <param name="id">Instructor ID to update.</param>
         /// <param name="dto">Updated instructor data.</param>
         /// <returns>Result of the update process.</returns>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = AppRoles.Admin)]
         [HttpPut("Update/{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] InstructorUpdateDTO dto)
         {
@@ -73,7 +73,7 @@ namespace Exam.Host.Controllers
         /// </summary>
         /// <param name="id">Instructor ID to delete.</param>
         /// <returns>Result of the deletion process.</returns>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = AppRoles.Admin)]
         [HttpDelete("Delete/{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {

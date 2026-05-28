@@ -1,5 +1,7 @@
+using Exam.Application.Dto.Common;
 using Exam.Application.Dto.SubmitExam;
 using Exam.Application.Services.Interfaces.IExamStudentServices;
+using Exam.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -20,15 +22,16 @@ namespace Exam.Host.Controllers
 
         /// <summary>
         /// Start a new exam session for the current authenticated student.
+        /// Returns the session ID, exam info, and all questions in one response.
         /// </summary>
         /// <param name="examId">Exam ID.</param>
-        /// <returns>The ID of the newly created session.</returns>
+        /// <returns>Session details including questions and choices.</returns>
         [HttpPost("start/{examId:int}")]
         public async Task<IActionResult> StartExam(int examId)
         {
             var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var examStudentId = await _studentExamService.StartExamAsync(examId, studentId);
-            return Ok(new { message = "Exam started successfully", examStudentId });
+            var response = await _studentExamService.StartExamAsync(examId, studentId);
+            return Ok(ApiResponse<StartExamResponseDTO>.SuccessResponse(response, "Exam started successfully"));
         }
 
         /// <summary>
@@ -42,24 +45,32 @@ namespace Exam.Host.Controllers
         {
             var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             await _studentExamService.SaveAnswerAsync(examStudentId, studentId, dto.QuestionId, dto.ChoiceId);
-            return Ok(new { message = "Answer saved successfully" });
+            return Ok(ApiResponse.SuccessResponse("Answer saved successfully"));
         }
 
         /// <summary>
         /// Submit an exam session for final grading.
         /// </summary>
         /// <param name="examStudentId">Exam session ID.</param>
-        /// <returns>Success message.</returns>
+        /// <param name="dto">Optional: List of all answers to save during submission.</param>
+        /// <returns>Grading result.</returns>
         [HttpPost("{examStudentId:int}/submit")]
-        public async Task<IActionResult> SubmitExam(int examStudentId)
+        public async Task<IActionResult> SubmitExam(int examStudentId, [FromBody] SubmitExamDTO? dto)
         {
             var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            await _studentExamService.SubmitExamAsync(examStudentId, studentId);
-            return Ok(new { message = "Exam submitted successfully" });
+
+            // Map StudentAnswerDTO to ExamAnswerDTO to fix type mismatch
+            var answers = dto?.Answers?.Select(a => new ExamAnswerDTO
+            {
+                QuestionId = a.QuestionId,
+                ChoiceId = a.ChoiceId
+            });
+
+            var result = await _studentExamService.SubmitExamAsync(examStudentId, studentId, answers);
+            return Ok(ApiResponse<ExamResultDTO>.SuccessResponse(result, "Exam submitted successfully"));
         }
 
         /// <summary>
-        /// Get the list of questions assigned to an active exam session.
         /// </summary>
         /// <param name="examStudentId">Exam session ID.</param>
         /// <returns>List of questions.</returns>
@@ -95,8 +106,6 @@ namespace Exam.Host.Controllers
             return Ok(result);
         }
 
-
-
         /// <summary>
         /// Get all exam results for the current authenticated student.
         /// </summary>
@@ -113,7 +122,7 @@ namespace Exam.Host.Controllers
         /// [Admin/Instructor Only] Get paged results for a specific exam.
         /// </summary>
         [HttpGet("results/exam/{examId:int}")]
-        [Authorize(Roles = "Admin,Instructor")]
+        [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Instructor)]
         public async Task<IActionResult> GetExamResults(int examId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var res = await _studentExamService.GetExamResultsPagedAsync(examId, page, pageSize);
@@ -131,6 +140,20 @@ namespace Exam.Host.Controllers
             var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var result = await _studentExamService.GetExamResultAsync(examId, studentId);
             return Ok(result);
+        }
+
+        /// <summary>
+        /// Get only the student answers for a specific exam session.
+        /// Does not include correct answers or scores for security.
+        /// </summary>
+        /// <param name="examStudentId">Exam session ID.</param>
+        /// <returns>List of question/choice pairs.</returns>
+        [HttpGet("{examStudentId:int}/answers")]
+        public async Task<IActionResult> GetStudentAnswers(int examStudentId)
+        {
+            var studentId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var answers = await _studentExamService.GetStudentAnswersAsync(examStudentId, studentId);
+            return Ok(ApiResponse<IEnumerable<StudentExamAnswerResponseDTO>>.SuccessResponse(answers, "Answers retrieved successfully"));
         }
     }
 }

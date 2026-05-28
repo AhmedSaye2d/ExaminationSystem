@@ -1,7 +1,5 @@
-using Exam.Infrastructure.Middleware;
-using Exam.Infrastructure.DependencyInjection;
 using Exam.Application.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
+using Exam.Infrastructure.DependencyInjection;
 using Exam.Infrastructure.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,7 +7,24 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+  .AddJsonOptions(options =>
+  {
+      options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+      options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+  });
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        builder =>
+        {
+            builder.AllowAnyOrigin()
+                   .AllowAnyMethod()
+                   .AllowAnyHeader();
+        });
+});
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -55,11 +70,16 @@ var app = builder.Build();
 
 app.UseInfrastructure();
 
+app.UseCors("AllowAll");
+
+
 // Configure the HTTP request pipeline.
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+
+app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -1,17 +1,16 @@
 using AutoMapper;
-using Exam.Application.Dto.Identity;
 using Exam.Application.Dto.Choice;
-using ExamDTOs = Exam.Application.Dto.Exam;
-using Exam.Application.Dto.Question;
-using Exam.Domain.Entities.Identity;
-using Exam.Domain.Entities;
-using Exam.Application.Dto.Department;
-using Exam.Application.Dto.Instructor;
 using Exam.Application.Dto.Course;
+using Exam.Application.Dto.Department;
+using Exam.Application.Dto.Identity;
+using Exam.Application.Dto.Instructor;
+using Exam.Application.Dto.Proctoring;
+using Exam.Application.Dto.Question;
 using Exam.Application.Dto.Student;
 using Exam.Application.Dto.SubmitExam;
-using Exam.Domain.Enum;
-using System.Linq;
+using Exam.Domain.Entities;
+using Exam.Domain.Entities.Identity;
+using ExamDTOs = Exam.Application.Dto.Exam;
 
 namespace Exam.Application.Mapping
 {
@@ -20,7 +19,7 @@ namespace Exam.Application.Mapping
         public MappingConfig()
         {
             CreateMap<CreateUser, AppUser>()
-                .ForMember(dest => dest.UserName,
+               .ForMember(dest => dest.UserName,
                            opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.Email,
                            opt => opt.MapFrom(src => src.Email))
@@ -54,7 +53,7 @@ namespace Exam.Application.Mapping
             // Student Mapping
             // =======================
             CreateMap<Student, StudentDTO>()
-                .ForMember(dest => dest.EnrolledCourses, 
+                .ForMember(dest => dest.EnrolledCourses,
                            opt => opt.MapFrom(src => src.CourseStudents.Select(cs => cs.Course)));
             CreateMap<StudentCreateDTO, Student>();
             CreateMap<StudentUpdateDTO, Student>();
@@ -162,7 +161,7 @@ namespace Exam.Application.Mapping
             // =======================
             CreateMap<Choice, ChoiceDTO>()
                 .ForMember(dest => dest.IsCorrect, opt => opt.MapFrom(src => src.IsCorrectAnswer));
-            
+
             CreateMap<Choice, ChoiceReadDTO>()
                  .ForMember(dest => dest.IsCorrect, opt => opt.MapFrom(src => src.IsCorrectAnswer));
 
@@ -184,6 +183,11 @@ namespace Exam.Application.Mapping
                 .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student != null ? (src.Student.FirstName + " " + src.Student.LastName) : ""))
                 .ForMember(dest => dest.TotalGrade, opt => opt.MapFrom(src => src.Exam != null ? src.Exam.TotalGrade : 0));
 
+            // =======================
+            // Proctoring Report Mappings
+            // =======================
+            CreateMap<ProctoringLog, ProctoringReportDto>()
+                .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student != null ? src.Student.FullName : "Unknown"));
         }
     }
 }

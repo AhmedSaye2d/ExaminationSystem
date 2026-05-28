@@ -1,5 +1,4 @@
 ﻿using Exam.Application.Dto.Choice;
-using System;
 
 namespace Exam.Application.Dto.Question
 {

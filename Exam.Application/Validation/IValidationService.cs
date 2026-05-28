@@ -1,10 +1,5 @@
-﻿using Exam.Application.Dto.Common;
+using Exam.Application.Dto.Common;
 using FluentValidation;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Exam.Application.Validation
 {
@@ -20,8 +15,8 @@ namespace Exam.Application.Validation
 
             if (!result.IsValid)
             {
-                var errors = string.Join(", ", result.Errors.Select(e => e.ErrorMessage));
-                return new ServiceResponse(false, errors);
+                var errors = result.Errors.Select(e => e.ErrorMessage).ToList();
+                return ServiceResponse.Fail("Validation failed", errors);
             }
 
             return new ServiceResponse(true, "Validation successful");

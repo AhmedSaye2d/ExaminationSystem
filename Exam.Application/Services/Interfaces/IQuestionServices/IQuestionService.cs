@@ -1,4 +1,4 @@
-﻿using Exam.Application.Dto.Question;
+using Exam.Application.Dto.Question;
 
 namespace Exam.Application.Services.Interfaces.IQuestionServices
 {
@@ -8,7 +8,7 @@ namespace Exam.Application.Services.Interfaces.IQuestionServices
         Task<(IEnumerable<QuestionDTO> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, int? courseId);
         Task<QuestionDTO> GetByIdAsync(int id);
 
-        Task CreateAsync(QuestionCreateDTO dto);
+        Task<int> CreateAsync(QuestionCreateDTO dto);
         Task UpdateAsync(int id, QuestionCreateDTO dto);
         Task DeleteAsync(int id);
 

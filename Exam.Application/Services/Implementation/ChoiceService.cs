@@ -2,7 +2,6 @@
 using Exam.Application.Dto.Choice;
 using Exam.Application.Exceptions;
 using Exam.Application.Services.Interfaces.IChoiceServices;
-using Exam.Domain;
 using Exam.Domain.Entities;
 using Exam.Domain.Interface;
 

@@ -1,5 +1,7 @@
+using Exam.Application.Dto.Common;
 using Exam.Application.Dto.Exam;
 using Exam.Application.Services.Interfaces.IExamServices;
+using Exam.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -23,11 +25,11 @@ namespace Exam.Host.Controllers
         /// </summary>
         /// <returns>A list of exams.</returns>
         [HttpGet("GetAll")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = AppRoles.Admin)]
         public async Task<IActionResult> GetAll()
         {
             var res = await _examService.GetAllAsync();
-            return Ok(res);
+            return Ok(ApiResponse<IEnumerable<ExamDTO>>.SuccessResponse(res));
         }
 
         /// <summary>
@@ -41,7 +43,7 @@ namespace Exam.Host.Controllers
         public async Task<IActionResult> Get([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] int? courseId = null)
         {
             var res = await _examService.GetPagedAsync(page, pageSize, courseId);
-            return Ok(new { data = res.Items, totalCount = res.TotalCount, page, pageSize });
+            return Ok(ApiResponse<object>.SuccessResponse(new { data = res.Items, totalCount = res.TotalCount, page, pageSize }));
         }
 
         /// <summary>
@@ -49,7 +51,7 @@ namespace Exam.Host.Controllers
         /// </summary>
         /// <returns>A list of the instructor's exams.</returns>
         [HttpGet("my-exams")]
-        [Authorize(Roles = "Instructor")]
+        [Authorize(Roles = AppRoles.Instructor)]
         public async Task<IActionResult> GetMyExams()
         {
             var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -75,7 +77,7 @@ namespace Exam.Host.Controllers
         /// <param name="id">Exam ID.</param>
         /// <returns>Exam statistics.</returns>
         [HttpGet("stats/{id:int}")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> GetExamStats(int id)
         {
             var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -89,12 +91,12 @@ namespace Exam.Host.Controllers
         /// <param name="dto">Exam details.</param>
         /// <returns>Success message.</returns>
         [HttpPost("Create")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> Create([FromBody] ExamCreateDTO dto)
         {
             // Instructors can only create exams for themselves.
             // Admins may specify any instructorId in the request body.
-            var isAdmin = User.IsInRole("Admin");
+            var isAdmin = User.IsInRole(AppRoles.Admin);
             if (!isAdmin)
             {
                 var tokenUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -102,7 +104,7 @@ namespace Exam.Host.Controllers
             }
 
             await _examService.CreateAsync(dto);
-            return Ok(new { message = "Exam created successfully" });
+            return Ok(ApiResponse.SuccessResponse("Exam created successfully"));
         }
 
         /// <summary>
@@ -112,7 +114,7 @@ namespace Exam.Host.Controllers
         /// <param name="dto">Updated exam details.</param>
         /// <returns>Success message.</returns>
         [HttpPut("Update/{id:int}")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> Update(int id, [FromBody] ExamCreateDTO dto)
         {
             var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -126,7 +128,7 @@ namespace Exam.Host.Controllers
         /// <param name="id">Exam ID to delete.</param>
         /// <returns>Success message.</returns>
         [HttpDelete("Delete/{id:int}")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> Delete(int id)
         {
             var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -141,7 +143,7 @@ namespace Exam.Host.Controllers
         /// <param name="dto">The scheduling details (start, end, duration).</param>
         /// <returns>A success message.</returns>
         [HttpPut("{id:int}/schedule")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> Schedule(int id, [FromBody] ScheduleExamDTO dto)
         {
             var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -155,7 +157,7 @@ namespace Exam.Host.Controllers
         /// <param name="id">The ID of the exam to publish.</param>
         /// <returns>A success message.</returns>
         [HttpPost("{id:int}/publish")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> Publish(int id)
         {
             var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -169,7 +171,7 @@ namespace Exam.Host.Controllers
         /// <param name="id">The ID of the exam to unpublish.</param>
         /// <returns>A success message.</returns>
         [HttpPost("{id:int}/unpublish")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> Unpublish(int id)
         {
             var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -183,7 +185,7 @@ namespace Exam.Host.Controllers
         /// <param name="examId">Exam ID.</param>
         /// <returns>A list of questions belonging to the exam.</returns>
         [HttpGet("{examId:int}/questions")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> GetQuestions(int examId)
         {
             var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -197,14 +199,14 @@ namespace Exam.Host.Controllers
         /// <param name="examId">The ID of the exam.</param>
         /// <param name="dto">The question details (ID, points, display order).</param>
         /// <returns>A success message.</returns>
-        [HttpPost("{examId:int}/questions")]
-        [Authorize(Roles = "Instructor,Admin")]
-        public async Task<IActionResult> AddQuestion(int examId, [FromBody] Exam.Application.Dto.Exam.AddQuestionToExamDTO dto)
-        {
-            var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            await _examService.AddQuestionToExamAsync(examId, dto.QuestionId, dto.Points, dto.Order, instructorId);
-            return Ok(new { message = "Question added to exam" });
-        }
+        //[HttpPost("{examId:int}/questions")]
+        //[Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
+        //public async Task<IActionResult> AddQuestion(int examId, [FromBody] Exam.Application.Dto.Exam.AddQuestionToExamDTO dto)
+        //{
+        //    var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        //    await _examService.AddQuestionToExamAsync(examId, dto.QuestionId, dto.Points, dto.Order, instructorId);
+        //    return Ok(new { message = "Question added to exam" });
+        //}
 
         /// <summary>
         /// Remove a question from an exam.
@@ -213,7 +215,7 @@ namespace Exam.Host.Controllers
         /// <param name="questionId">The ID of the question to remove.</param>
         /// <returns>A success message.</returns>
         [HttpDelete("{examId:int}/questions/{questionId:int}")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> RemoveQuestion(int examId, int questionId)
         {
             var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -226,13 +228,13 @@ namespace Exam.Host.Controllers
         /// </summary>
         /// <param name="examId">The ID of the exam.</param>
         /// <returns>A list of student results for the exam.</returns>
-        [HttpGet("{examId:int}/results")]
-        [Authorize(Roles = "Instructor,Admin")]
-        public async Task<IActionResult> GetResultsForExam(int examId)
-        {
-            var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var results = await _examService.GetExamResultsForInstructorAsync(examId, instructorId);
-            return Ok(results);
-        }
+        //[HttpGet("{examId:int}/results")]
+        //[Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
+        //public async Task<IActionResult> GetResultsForExam(int examId)
+        //{
+        //    var instructorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        //    var results = await _examService.GetExamResultsForInstructorAsync(examId, instructorId);
+        //    return Ok(results);
+        //}
     }
 }

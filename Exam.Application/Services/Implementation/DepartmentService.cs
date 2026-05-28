@@ -2,7 +2,6 @@
 using Exam.Application.Dto.Department;
 using Exam.Application.Exceptions;
 using Exam.Application.Services.Interfaces.IDepartmentServices;
-using Exam.Domain;
 using Exam.Domain.Entities;
 using Exam.Domain.Interface;
 namespace Exam.Application.Services.Implementation;

@@ -1,10 +1,4 @@
-﻿using Exam.Domain.Common;
-using Exam.Domain.Entities.Common;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Exam.Domain.Entities.Common;
 using Exam.Domain.Enum;
 
 namespace Exam.Domain.Entities

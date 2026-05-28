@@ -1,5 +1,4 @@
 using Exam.Domain.Entities.Common;
-using System;
 
 namespace Exam.Domain.Entities.Identity
 {

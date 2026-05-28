@@ -3,7 +3,6 @@ using Exam.Domain.Entities.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 namespace Exam.Infrastructure.Data
 {
     public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<int>, int>
@@ -26,6 +25,9 @@ namespace Exam.Infrastructure.Data
         public DbSet<Question> Questions { get; set; }
         public DbSet<Student> Students { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<ProctoringLog> ProctoringLogs { get; set; }
+        public DbSet<ExamProctoringSummary> ExamProctoringSummaries { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -45,6 +47,22 @@ namespace Exam.Infrastructure.Data
             builder.Entity<CourseStudent>().HasQueryFilter(cs => !cs.IsDeleted);
             builder.Entity<CourseInstructor>().HasQueryFilter(ci => !ci.IsDeleted);
             builder.Entity<RefreshToken>().HasQueryFilter(rt => !rt.IsDeleted);
+            builder.Entity<ProctoringLog>().HasQueryFilter(pl => !pl.IsDeleted);
+            builder.Entity<ExamProctoringSummary>().HasQueryFilter(eps => !eps.IsDeleted);
+
+
+            // ===================== Indexes =====================
+            builder.Entity<ProctoringLog>()
+                .HasIndex(pl => new { pl.ExamId, pl.StudentId, pl.CreatedAt });
+
+            builder.Entity<ProctoringLog>()
+                .HasIndex(pl => pl.RiskLevel);
+
+            builder.Entity<ExamProctoringSummary>()
+                .HasIndex(eps => new { eps.ExamId, eps.StudentId });
+
+            builder.Entity<ExamProctoringSummary>()
+                .HasIndex(eps => eps.FinalRiskLevel);
         }
     }
 }

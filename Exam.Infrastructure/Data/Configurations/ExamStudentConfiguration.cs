@@ -1,11 +1,6 @@
-﻿using Exam.Domain.Entities;
+using Exam.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Exam.Infrastructure.Data.Configurations
 {
@@ -33,9 +28,7 @@ namespace Exam.Infrastructure.Data.Configurations
                 .HasForeignKey(a => a.ExamStudentId);
             // جميع إجابات الطالب داخل الامتحان
 
-            builder.HasIndex(es => new { es.StudentId, es.ExamId })
-                .IsUnique();
-            // يمنع الطالب من دخول نفس الامتحان أكثر من مرة (محاولة واحدة)
+            // Allow a student to have multiple entries for the same exam (multiple attempts)
 
             // Performance optimizations (Indexing)
             builder.HasIndex(es => es.ExamId);

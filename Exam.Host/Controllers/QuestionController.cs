@@ -1,15 +1,14 @@
 using Exam.Application.Dto.Question;
 using Exam.Application.Services.Interfaces.IQuestionServices;
+using Exam.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 
 namespace Exam.Host.Controllers
 {
-    [Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
     [ApiController]
     [Route("api/questions")]
-    [Authorize]
     public class QuestionsController : ControllerBase
     {
         private readonly IQuestionService _questionService;
@@ -62,11 +61,11 @@ namespace Exam.Host.Controllers
         /// <param name="dto">Question details.</param>
         /// <returns>Success message.</returns>
         [HttpPost("Create")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> Create([FromBody] QuestionCreateDTO dto)
         {
-            await _questionService.CreateAsync(dto);
-            return Ok(new { message = "Question created successfully" });
+            var id = await _questionService.CreateAsync(dto);
+            return Ok(new { message = "Question created successfully", id });
         }
 
         /// <summary>
@@ -76,7 +75,7 @@ namespace Exam.Host.Controllers
         /// <param name="dto">Updated question data.</param>
         /// <returns>Success message.</returns>
         [HttpPut("Update/{id:int}")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> Update(int id, [FromBody] QuestionCreateDTO dto)
         {
             await _questionService.UpdateAsync(id, dto);
@@ -89,7 +88,7 @@ namespace Exam.Host.Controllers
         /// <param name="id">Question ID to delete.</param>
         /// <returns>Success message.</returns>
         [HttpDelete("Delete/{id:int}")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> Delete(int id)
         {
             await _questionService.DeleteAsync(id);
@@ -102,7 +101,7 @@ namespace Exam.Host.Controllers
         /// <param name="dto">Question and choices data.</param>
         /// <returns>ID of the newly created question.</returns>
         [HttpPost("with-choices")]
-        [Authorize(Roles = "Instructor,Admin")]
+        [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> AddQuestionWithChoices([FromBody] QuestionWithChoicesDTO dto)
         {
             var id = await _questionService.AddQuestionWithChoicesAsync(dto);

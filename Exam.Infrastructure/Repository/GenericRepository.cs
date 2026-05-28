@@ -18,6 +18,8 @@ namespace Exam.Infrastructure.Repository
             _dbSet = _context.Set<TEntity>();
         }
 
+        public IQueryable<TEntity> AsQueryable() => _dbSet;
+
         // ============================================
         // GET ALL
         // ============================================
@@ -55,7 +57,7 @@ namespace Exam.Infrastructure.Repository
         // FIND WITH CONDITION
         // ============================================
         public async Task<IEnumerable<TEntity>> FindAsync(
-            Expression<Func<TEntity, bool>> predicate, 
+            Expression<Func<TEntity, bool>> predicate,
             params string[] includes)
         {
             IQueryable<TEntity> query = _dbSet;
@@ -73,6 +75,28 @@ namespace Exam.Infrastructure.Repository
 
             return await query
                 .AsNoTracking()
+                .Where(predicate)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<TEntity>> FindWithTrackingAsync(
+            Expression<Func<TEntity, bool>> predicate,
+            params string[] includes)
+        {
+            IQueryable<TEntity> query = _dbSet;
+
+            // 🔥 Soft Delete
+            if (typeof(BaseEntity).IsAssignableFrom(typeof(TEntity)) || typeof(Exam.Domain.Entities.Identity.AppUser).IsAssignableFrom(typeof(TEntity)))
+            {
+                query = query.Where(e => !EF.Property<bool>(e, "IsDeleted"));
+            }
+
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+
+            return await query
                 .Where(predicate)
                 .ToListAsync();
         }
@@ -144,9 +168,9 @@ namespace Exam.Infrastructure.Repository
         // GET PAGED
         // ============================================
         public async Task<(IEnumerable<TEntity> Items, int TotalCount)> GetPagedAsync(
-            int page, 
-            int pageSize, 
-            Expression<Func<TEntity, bool>>? predicate = null, 
+            int page,
+            int pageSize,
+            Expression<Func<TEntity, bool>>? predicate = null,
             bool asNoTracking = true,
             params string[] includes)
         {

@@ -1,8 +1,10 @@
 using AutoMapper;
 using Exam.Application.Dto.Course;
+using Exam.Application.Dto.Exam;
+using Exam.Application.Dto.Student;
 using Exam.Application.Exceptions;
 using Exam.Application.Services.Interfaces.ICourseService;
-using Exam.Domain;
+using Exam.Domain.Constants;
 using Exam.Domain.Entities;
 using Exam.Domain.Interface;
 
@@ -40,12 +42,10 @@ namespace Exam.Application.Services.Implementation
             var courseRepo = _unitOfWork.Repository<Course>();
             var departmentRepo = _unitOfWork.Repository<Department>();
 
-            // تأكد إن القسم موجود
             var departmentExists = await departmentRepo.ExistsAsync(dto.DepartmentId);
             if (!departmentExists)
                 throw new ItemNotFoundException("Department not found");
 
-            // منع تكرار اسم الكورس داخل نفس القسم
             var existingCourse = await courseRepo
                 .FindAsync(c => c.Name == dto.Name && c.DepartmentId == dto.DepartmentId);
 
@@ -92,12 +92,10 @@ namespace Exam.Application.Services.Implementation
             if (course == null || course.IsDeleted)
                 throw new ItemNotFoundException("Course not found");
 
-            // Check for existing exams
             var exams = await _unitOfWork.Repository<Domain.Entities.Exam>().FindAsync(e => e.CourseID == id && !e.IsDeleted);
             if (exams.Any())
                 throw new ArgumentException("Cannot delete course with active exams");
 
-            // Check for student enrollments
             var enrollments = await _unitOfWork.Repository<CourseStudent>().FindAsync(cs => cs.CourseId == id);
             if (enrollments.Any())
                 throw new ArgumentException("Cannot delete course with enrolled students");
@@ -107,14 +105,13 @@ namespace Exam.Application.Services.Implementation
             await _unitOfWork.CompleteAsync();
         }
 
-        public async Task<IEnumerable<Exam.Application.Dto.Exam.ExamDTO>> GetCourseExamsAsync(int courseId, int userId, string role)
+        public async Task<IEnumerable<ExamDTO>> GetCourseExamsAsync(int courseId, int userId, string role)
         {
-            // SECURE: Only Admin, Instructor or Enrolled Student can see the exams
-            if (role == "Student")
+            if (role == AppRoles.Student)
             {
                 var isEnrolled = await _unitOfWork.Repository<CourseStudent>()
                     .ExistsAsync(cs => cs.CourseId == courseId && cs.StudentId == userId);
-                
+
                 if (!isEnrolled)
                     throw new UnauthorizedAccessException("You are not enrolled in this course to view its exams.");
             }
@@ -122,20 +119,19 @@ namespace Exam.Application.Services.Implementation
             var exams = await _unitOfWork.Repository<Domain.Entities.Exam>()
                 .FindAsync(e => e.CourseID == courseId && !e.IsDeleted);
 
-            // Hide unpublished exams for students
-            if (role == "Student")
+            if (role == AppRoles.Student)
                 exams = exams.Where(e => e.IsPublished);
 
-            return _mapper.Map<IEnumerable<Exam.Application.Dto.Exam.ExamDTO>>(exams);
+            return _mapper.Map<IEnumerable<ExamDTO>>(exams);
         }
 
-        public async Task<IEnumerable<Exam.Application.Dto.Student.StudentDTO>> GetCourseStudentsAsync(int courseId)
+        public async Task<IEnumerable<StudentDTO>> GetCourseStudentsAsync(int courseId)
         {
             var enrollments = await _unitOfWork.Repository<CourseStudent>()
                 .FindAsync(cs => cs.CourseId == courseId, "Student");
 
             var students = enrollments.Select(e => e.Student);
-            return _mapper.Map<IEnumerable<Exam.Application.Dto.Student.StudentDTO>>(students);
+            return _mapper.Map<IEnumerable<StudentDTO>>(students);
         }
 
         public async Task AssignInstructorToCourseAsync(int courseId, int instructorId)

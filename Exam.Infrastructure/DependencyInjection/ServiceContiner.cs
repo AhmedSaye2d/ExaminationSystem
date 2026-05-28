@@ -1,15 +1,15 @@
 using EntityFramework.Exceptions.SqlServer;
+using Exam.Application.Services.Interfaces;
+using Exam.Domain;
 using Exam.Domain.Entities.Identity;
+using Exam.Domain.Interface;
 using Exam.Domain.Interface.Authentication;
+using Exam.Infrastructure.BackgroundServices;
 using Exam.Infrastructure.Data;
 using Exam.Infrastructure.Middleware;
+using Exam.Infrastructure.Repository;
 using Exam.Infrastructure.Repository.Authentication;
 using Exam.Infrastructure.Services;
-using Exam.Application.Services.Interfaces;
-using Exam.Infrastructure.BackgroundServices;
-using Exam.Infrastructure.Repository;
-using Exam.Domain;
-using Exam.Domain.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
@@ -18,7 +18,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using System;
 
 namespace Exam.Infrastructure.DependencyInjection
 {
@@ -85,6 +84,17 @@ namespace Exam.Infrastructure.DependencyInjection
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddMemoryCache();
+
+            // ===================== AI Proctoring Gateway =====================
+            services.AddHttpClient<IProctoringService, ProctoringService>(client =>
+            {
+                var baseUrl = configuration["FastApi:BaseUrl"] ?? "http://localhost:8000";
+                client.BaseAddress = new Uri(baseUrl);
+
+                var timeout = configuration.GetValue<int>("FastApi:TimeoutSeconds", 10);
+                client.Timeout = TimeSpan.FromSeconds(timeout);
+            });
 
             // ===================== Background Services =====================
             services.AddHostedService<ExamAutoSubmitService>();

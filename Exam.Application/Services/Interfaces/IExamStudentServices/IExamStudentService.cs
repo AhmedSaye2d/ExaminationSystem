@@ -2,11 +2,11 @@ namespace Exam.Application.Services.Interfaces.IExamStudentServices
 {
     public interface IStudentExamService
     {
-        Task<int> StartExamAsync(int examId, int studentId);
+        Task<Exam.Application.Dto.SubmitExam.StartExamResponseDTO> StartExamAsync(int examId, int studentId);
 
         Task SaveAnswerAsync(int examStudentId, int studentId, int questionId, int choiceId);
 
-        Task SubmitExamAsync(int examStudentId, int studentId);
+        Task<Exam.Application.Dto.SubmitExam.ExamResultDTO> SubmitExamAsync(int examStudentId, int studentId, IEnumerable<Exam.Application.Dto.SubmitExam.ExamAnswerDTO>? answers = null);
 
         Task<Exam.Application.Dto.SubmitExam.ExamResultDTO> GetExamResultAsync(int examId, int studentId);
         Task<Exam.Application.Dto.SubmitExam.ExamResultDTO> GetResultBySessionAsync(int examStudentId, int studentId);
@@ -19,5 +19,10 @@ namespace Exam.Application.Services.Interfaces.IExamStudentServices
 
         // Resume an in-progress exam session
         Task<Exam.Application.Dto.SubmitExam.ResumeExamDTO> ResumeExamAsync(int examStudentId, int studentId);
+
+        Task<IEnumerable<Exam.Application.Dto.SubmitExam.StudentExamAnswerResponseDTO>> GetStudentAnswersAsync(int examStudentId, int studentId);
+
+        Task<IEnumerable<Exam.Application.Dto.Question.QuestionReadDTO>> GetExamSolutionsAsync(int examId, int studentId);
+        Task<IEnumerable<Exam.Application.Dto.SubmitExam.StudentExamAnswerResponseDTO>> GetMyAnswersByExamIdAsync(int examId, int studentId);
     }
 }

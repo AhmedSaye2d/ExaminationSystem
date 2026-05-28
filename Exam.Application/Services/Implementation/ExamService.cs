@@ -1,13 +1,11 @@
 using AutoMapper;
 using Exam.Application.Dto.Exam;
 using Exam.Application.Exceptions;
+using Exam.Application.Services.Interfaces; // Added this using directive
 using Exam.Application.Services.Interfaces.IExamServices;
 using Exam.Domain.Entities;
-using Exam.Domain.Interface;
 using Exam.Domain.Enum; // Added this using directive
-using System.Linq; // Added this using directive
-using System.Threading.Tasks;
-using Exam.Application.Services.Interfaces; // Added this using directive
+using Exam.Domain.Interface;
 using FluentValidation;
 
 namespace Exam.Application.Services.Implementation
@@ -127,7 +125,7 @@ namespace Exam.Application.Services.Implementation
                 throw new ArgumentException(validation.Errors.First().ErrorMessage);
 
             var examRepo = _unitOfWork.Repository<Domain.Entities.Exam>();
-            
+
             var exam = await examRepo.GetByIdAsync(id);
             if (exam == null || exam.IsDeleted)
                 throw new ItemNotFoundException("Exam not found");
@@ -168,7 +166,7 @@ namespace Exam.Application.Services.Implementation
         public async Task<IEnumerable<Exam.Application.Dto.Question.QuestionDTO>> GetQuestionsByExamIdAsync(int examId, int instructorId)
         {
             var exam = await _unitOfWork.Repository<Domain.Entities.Exam>().GetByIdAsync(examId) ?? throw new ItemNotFoundException("Exam not found");
-            
+
             // 🔥 SECURE: Only the owner or admin can see the questions list through this management service
             if (exam.InstructorID != instructorId && !_currentUserService.IsAdmin())
                 throw new UnauthorizedAccessException("You are not authorized to view questions for this exam");
@@ -184,7 +182,7 @@ namespace Exam.Application.Services.Implementation
             var questionRepo = _unitOfWork.Repository<Question>();
 
             var exam = await examRepo.GetByIdAsync(examId) ?? throw new ItemNotFoundException("Exam not found");
-            
+
             // 🔥 SECURE: Only the owner or admin can add questions to this exam
             if (exam.InstructorID != instructorId && !_currentUserService.IsAdmin())
                 throw new UnauthorizedAccessException("You can only add questions to your own exams");
@@ -230,8 +228,18 @@ namespace Exam.Application.Services.Implementation
             if (exam.InstructorID != instructorId && !_currentUserService.IsAdmin())
                 throw new UnauthorizedAccessException("You can only schedule your own exams");
 
-            exam.StartDate = dto.StartTime;
-            exam.DueDate = dto.EndTime;
+            if (!DateTime.TryParse(dto.StartTime, out var startTime))
+                throw new ArgumentException("Invalid start time format. Please use a standard date/time format, e.g. 'yyyy-MM-dd HH:mm' or '8:20 PM'.");
+
+            if (!DateTime.TryParse(dto.EndTime, out var endTime))
+                throw new ArgumentException("Invalid end time format. Please use a standard date/time format.");
+
+            // Convert to UTC if they are local time
+            if (startTime.Kind == DateTimeKind.Unspecified) startTime = DateTime.SpecifyKind(startTime, DateTimeKind.Utc);
+            if (endTime.Kind == DateTimeKind.Unspecified) endTime = DateTime.SpecifyKind(endTime, DateTimeKind.Utc);
+
+            exam.StartDate = startTime;
+            exam.DueDate = endTime;
             exam.Settings ??= new Domain.Entities.ExamSettings();
             exam.Settings.DurationMinutes = dto.DurationMinutes;
 

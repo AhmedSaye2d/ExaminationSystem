@@ -1,7 +1,9 @@
 using Exam.Application.Dto.Department;
 using Exam.Application.Services.Interfaces.IDepartmentServices;
+using Exam.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 namespace Exam.Host.Controllers
 {
     [Authorize]
@@ -45,7 +47,7 @@ namespace Exam.Host.Controllers
         /// </summary>
         /// <param name="dto">Department details.</param>
         /// <returns>Success message.</returns>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = AppRoles.Admin)]
         [HttpPost("Create")]
         public async Task<IActionResult> Create([FromBody] DepartmentCreateDTO dto)
         {
@@ -59,7 +61,7 @@ namespace Exam.Host.Controllers
         /// <param name="id">Department ID to update.</param>
         /// <param name="dto">Updated department details.</param>
         /// <returns>Success message.</returns>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = AppRoles.Admin)]
         [HttpPut("Update/{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] DepartmentCreateDTO dto)
         {
@@ -72,7 +74,7 @@ namespace Exam.Host.Controllers
         /// </summary>
         /// <param name="id">Department ID to delete.</param>
         /// <returns>Success message.</returns>
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = AppRoles.Admin)]
         [HttpDelete("Delete/{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {

@@ -74,6 +74,22 @@ namespace Exam.Infrastructure.DependencyInjection
                             Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)
                         )
                     };
+
+                    // Allow JWT via query string for WebSocket connections
+                    // (WebSocket clients cannot send Authorization headers after upgrade)
+                    options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var token = context.Request.Query["token"];
+                            if (!string.IsNullOrEmpty(token) &&
+                                context.HttpContext.WebSockets.IsWebSocketRequest)
+                            {
+                                context.Token = token;
+                            }
+                            return System.Threading.Tasks.Task.CompletedTask;
+                        }
+                    };
                 });
 
             services.AddScoped<IUserManagement, UserManagement>();
@@ -85,6 +101,7 @@ namespace Exam.Infrastructure.DependencyInjection
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IFileStorageService, LocalFileStorageService>();
+            services.AddScoped<IProctoringProcessor, ProctoringProcessor>();
             services.AddMemoryCache();
 
             // ===================== AI Proctoring Gateway =====================

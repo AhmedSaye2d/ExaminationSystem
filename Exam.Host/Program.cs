@@ -1,6 +1,7 @@
 using Exam.Application.DependencyInjection;
 using Exam.Infrastructure.DependencyInjection;
 using Exam.Infrastructure.Extensions;
+using Exam.Host.WebSockets;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,6 +68,10 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApplicationService();
 
+// ── WebSocket Handler ────────────────────────────────────────────────────────
+// Registered in the host project to avoid circular project references.
+builder.Services.AddScoped<ProctoringWebSocketHandler>();
+
 var app = builder.Build();
 
 app.UseInfrastructure();
@@ -82,6 +87,15 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
+// ── WebSocket support ────────────────────────────────────────────────────────
+// UseWebSockets() must come BEFORE UseAuthentication so the middleware can
+// inspect the upgrade request before headers are read by JwtBearer.
+var keepAliveSeconds = builder.Configuration.GetValue<int>("WebSocket:KeepAliveSeconds", 30);
+app.UseWebSockets(new WebSocketOptions
+{
+    KeepAliveInterval = TimeSpan.FromSeconds(keepAliveSeconds)
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -89,5 +103,17 @@ app.UseAuthorization();
 await app.ApplyMigrationsAndSeedAsync();
 
 app.MapControllers();
+
+// ── WebSocket endpoint: WS /ws/proctoring/frame ──────────────────────────────
+// Handled outside the MVC controller pipeline so that we can negotiate the
+// WebSocket upgrade before the MVC model-binding pipeline runs.
+// Authentication is performed manually inside ProctoringWebSocketHandler
+// using the same JWT parameters as the JwtBearer middleware.
+app.Map("/ws/proctoring/frame", async (HttpContext context) =>
+{
+    var handler = context.RequestServices.GetRequiredService<ProctoringWebSocketHandler>();
+    var lifetime = context.RequestServices.GetRequiredService<IHostApplicationLifetime>();
+    await handler.HandleAsync(context, lifetime.ApplicationStopping);
+});
 
 app.Run();

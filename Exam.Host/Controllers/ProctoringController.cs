@@ -1,8 +1,5 @@
 using Exam.Application.Dto.Proctoring;
 using Exam.Application.Services.Interfaces;
-using Exam.Domain.Entities;
-using Exam.Domain.Enum;
-using Exam.Domain.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -15,17 +12,21 @@ namespace Exam.Host.Controllers
     [Produces("application/json")]
     public class ProctoringController : ControllerBase
     {
-        private readonly IProctoringService _proctoringService;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IProctoringProcessor _processor;
+        private readonly IProctoringService   _proctoringService; // kept for ProcessVideo
 
-        public ProctoringController(IProctoringService proctoringService, IUnitOfWork unitOfWork)
+        public ProctoringController(
+            IProctoringProcessor processor,
+            IProctoringService   proctoringService)
         {
+            _processor         = processor;
             _proctoringService = proctoringService;
-            _unitOfWork = unitOfWork;
         }
 
         /// <summary>
         /// Receives a camera frame and forwards it to the AI Proctoring Service.
+        /// All validation and forwarding is now handled by IProctoringProcessor,
+        /// which is the same pipeline used by the WebSocket endpoint.
         /// </summary>
         /// <param name="request">Multipart form data containing the frame image, student ID, and exam ID.</param>
         /// <param name="cancellationToken"></param>
@@ -38,63 +39,43 @@ namespace Exam.Host.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status502BadGateway)]
         [ProducesResponseType(StatusCodes.Status504GatewayTimeout)]
-        public async Task<IActionResult> ProcessFrame([FromForm] ProctoringFrameRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> ProcessFrame(
+            [FromForm] ProctoringFrameRequest request,
+            CancellationToken cancellationToken)
         {
-            // 1. Authentication & Authorization Validation
+            // Resolve the authenticated user's ID from JWT claims
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!string.IsNullOrEmpty(userIdStr) && int.TryParse(userIdStr, out int currentUserId))
-            {
-                // If authenticated, ensure the student is only reporting for themselves
-                if (currentUserId != request.StudentId)
-                {
-                    return Forbid();
-                }
-            }
+            if (!int.TryParse(userIdStr, out int currentUserId))
+                return Unauthorized(new { message = "Cannot determine authenticated user identity." });
 
-            // 2. Exam Session Validation
-            // Check if there is an active (InProgress) session for this student and exam
-            var sessions = await _unitOfWork.Repository<ExamStudent>()
-                .FindAsync(es => es.ExamId == request.ExamId &&
-                                 es.StudentId == request.StudentId &&
-                                 es.Status == ExamStatus.InProgress);
+            // Delegate all validation + AI call to the shared processor
+            var result = await _processor.ProcessFrameAsync(
+                request.StudentId,
+                request.ExamId,
+                request.Frame,
+                currentUserId,
+                cancellationToken);
 
-            var activeSession = sessions.FirstOrDefault();
+            if (result.Success)
+                return Ok(result.Result);
 
-            if (activeSession == null)
+            return result.StatusCode switch
             {
-                return BadRequest(new { message = "No active exam session found. Proctoring is only allowed during an ongoing exam." });
-            }
-
-            // 3. Time Validation - Ensure the student is within their allotted exam time
-            if (activeSession.EndDate.HasValue && DateTime.UtcNow > activeSession.EndDate.Value)
-            {
-                return BadRequest(new { message = "Exam session time has expired. Proctoring is no longer permitted." });
-            }
-
-            // 4. Forward to FastAPI Gateway
-            try
-            {
-                var result = await _proctoringService.DetectCheatingAsync(request, cancellationToken);
-                return Ok(result);
-            }
-            catch (TimeoutException ex)
-            {
-                return StatusCode(StatusCodes.Status504GatewayTimeout, new { message = ex.Message });
-            }
-            catch (System.Net.Http.HttpRequestException ex)
-            {
-                return StatusCode(StatusCodes.Status502BadGateway, new { message = "AI Service is temporarily unavailable.", detail = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred during proctoring analysis.", error = ex.Message });
-            }
+                403 => Forbid(),
+                400 => BadRequest(new { message = result.ErrorMessage, code = result.ErrorCode }),
+                504 => StatusCode(StatusCodes.Status504GatewayTimeout,
+                           new { message = result.ErrorMessage }),
+                502 => StatusCode(StatusCodes.Status502BadGateway,
+                           new { message = result.ErrorMessage }),
+                _   => StatusCode(StatusCodes.Status500InternalServerError,
+                           new { message = result.ErrorMessage })
+            };
         }
 
         /// <summary>
         /// Uploads a video file for continuous AI proctoring analysis.
-        /// The video is processed frame-by-frame by the AI service with accumulated timers and scores.
-        /// Confirmed violations are saved to the database for reporting.
+        /// The video is processed frame-by-frame by the AI service with accumulated
+        /// timers and scores. Confirmed violations are saved to the database for reporting.
         /// </summary>
         [HttpPost("video")]
         [Consumes("multipart/form-data")]
@@ -102,32 +83,20 @@ namespace Exam.Host.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status502BadGateway)]
-        [RequestSizeLimit(200_000_000)] // 200MB max
-        public async Task<IActionResult> ProcessVideo([FromForm] ProctoringVideoRequest request, CancellationToken cancellationToken)
+        [RequestSizeLimit(200_000_000)] // 200 MB max
+        public async Task<IActionResult> ProcessVideo(
+            [FromForm] ProctoringVideoRequest request,
+            CancellationToken cancellationToken)
         {
             // 1. Authentication & Authorization Validation
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!string.IsNullOrEmpty(userIdStr) && int.TryParse(userIdStr, out int currentUserId))
             {
                 if (currentUserId != request.StudentId)
-                {
                     return Forbid();
-                }
             }
 
-            // 2. Exam Session Validation
-            var sessions = await _unitOfWork.Repository<ExamStudent>()
-                .FindAsync(es => es.ExamId == request.ExamId &&
-                                 es.StudentId == request.StudentId &&
-                                 es.Status == ExamStatus.InProgress);
-
-            var activeSession = sessions.FirstOrDefault();
-            if (activeSession == null)
-            {
-                return BadRequest(new { message = "No active exam session found. Proctoring is only allowed during an ongoing exam." });
-            }
-
-            // 3. Forward video to FastAPI for processing
+            // 2. Forward video to FastAPI for processing (unchanged)
             try
             {
                 var result = await _proctoringService.ProcessVideoAsync(request, cancellationToken);
@@ -139,13 +108,14 @@ namespace Exam.Host.Controllers
             }
             catch (System.Net.Http.HttpRequestException ex)
             {
-                return StatusCode(StatusCodes.Status502BadGateway, new { message = "AI Service is temporarily unavailable.", detail = ex.Message });
+                return StatusCode(StatusCodes.Status502BadGateway,
+                    new { message = "AI Service is temporarily unavailable.", detail = ex.Message });
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred during video proctoring analysis.", error = ex.Message });
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { message = "An error occurred during video proctoring analysis.", error = ex.Message });
             }
         }
-
     }
 }

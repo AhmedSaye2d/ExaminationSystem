@@ -94,26 +94,44 @@ namespace Exam.Infrastructure.Data
                 await userManager.AddToRoleAsync(inst2, AppRoles.Instructor);
             }
 
-            // 3. Students
-            if (!await context.Students.AnyAsync())
+            // 3. Students - check each student individually to ensure all are seeded
+            var studentsToSeed = new[]
             {
-                var stu1 = new Student { UserName = "student1@example.com", Email = "student1@example.com", FirstName = "Youssef", LastName = "Nabil", UserType = UserType.Student, MajorId = csDept.Id, EmailConfirmed = true, Gender = Gender.Male };
-                var stu2 = new Student { UserName = "student2@example.com", Email = "student2@example.com", FirstName = "Nour", LastName = "Hassan", UserType = UserType.Student, MajorId = seDept.Id, EmailConfirmed = true, Gender = Gender.Female };
-                var stu3 = new Student { UserName = "postman@example.com", Email = "postman@example.com", FirstName = "Postman", LastName = "Tester", UserType = UserType.Student, MajorId = csDept.Id, EmailConfirmed = true, Gender = Gender.Male };
+                new { Email = "student1@example.com", UserName = "student1@example.com", First = "Youssef", Last = "Nabil",  MajorId = csDept.Id, Gender = Gender.Male   },
+                new { Email = "student2@example.com", UserName = "student2@example.com", First = "Nour",    Last = "Hassan", MajorId = seDept.Id, Gender = Gender.Female },
+                new { Email = "postman@example.com",  UserName = "postman@example.com",  First = "Postman", Last = "Tester", MajorId = csDept.Id, Gender = Gender.Male   },
+                new { Email = "student3@example.com", UserName = "student3@example.com", First = "Ali",     Last = "Khaled", MajorId = csDept.Id, Gender = Gender.Male   },
+                new { Email = "student4@example.com", UserName = "student4@example.com", First = "Mona",    Last = "Zaki",   MajorId = seDept.Id, Gender = Gender.Female },
+                new { Email = "student5@example.com", UserName = "student5@example.com", First = "Kareem",  Last = "Mostafa",MajorId = csDept.Id, Gender = Gender.Male   },
+            };
 
-                await userManager.CreateAsync(stu1, "P@ssword123");
-                await userManager.AddToRoleAsync(stu1, AppRoles.Student);
-
-                await userManager.CreateAsync(stu2, "P@ssword123");
-                await userManager.AddToRoleAsync(stu2, AppRoles.Student);
-
-                await userManager.CreateAsync(stu3, "P@ssword123");
-                await userManager.AddToRoleAsync(stu3, AppRoles.Student);
+            foreach (var s in studentsToSeed)
+            {
+                if (await userManager.FindByEmailAsync(s.Email) == null)
+                {
+                    var stu = new Student
+                    {
+                        UserName = s.UserName,
+                        Email = s.Email,
+                        FirstName = s.First,
+                        LastName = s.Last,
+                        UserType = UserType.Student,
+                        MajorId = s.MajorId,
+                        EmailConfirmed = true,
+                        Gender = s.Gender
+                    };
+                    var result = await userManager.CreateAsync(stu, "P@ssword123");
+                    if (result.Succeeded)
+                        await userManager.AddToRoleAsync(stu, AppRoles.Student);
+                }
             }
 
             var instructor1 = await context.Instructors.FirstOrDefaultAsync(i => i.Email == "sara@exam.com");
             var postmanStudent = await context.Students.FirstOrDefaultAsync(s => s.Email == "postman@example.com");
             var student1User = await context.Students.FirstOrDefaultAsync(s => s.Email == "student1@example.com");
+            var student3User = await context.Students.FirstOrDefaultAsync(s => s.Email == "student3@example.com");
+            var student4User = await context.Students.FirstOrDefaultAsync(s => s.Email == "student4@example.com");
+            var student5User = await context.Students.FirstOrDefaultAsync(s => s.Email == "student5@example.com");
 
             // 4. Courses
             if (!await context.Courses.AnyAsync())

@@ -40,7 +40,8 @@ namespace Exam.Host.Controllers
                     return Forbid();
                 }
             }
-            var reportContent = await _reportingService.GetStudentSessionReportTxtAsync(examId, studentId);
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var reportContent = await _reportingService.GetStudentSessionReportTxtAsync(examId, studentId, baseUrl);
             if (reportContent == null) return NotFound();
             return Content(reportContent, "text/plain");
         }
@@ -50,7 +51,8 @@ namespace Exam.Host.Controllers
         [Authorize(Roles = AppRoles.Instructor + "," + AppRoles.Admin)]
         public async Task<IActionResult> ExportToExcel(int examId)
         {
-            var content = await _reportingService.GetReportsExcelByExamIdAsync(examId);
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var content = await _reportingService.GetReportsExcelByExamIdAsync(examId, baseUrl);
             if (content == null) return NotFound();
             return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Proctoring_Report_Exam_{examId}.xlsx");
         }
@@ -68,7 +70,8 @@ namespace Exam.Host.Controllers
                     return Forbid();
                 }
             }
-            var content = await _reportingService.GetStudentSessionReportExcelAsync(examId, studentId);
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var content = await _reportingService.GetStudentSessionReportExcelAsync(examId, studentId, baseUrl);
             if (content == null) return NotFound();
             return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Proctoring_Report_Exam_{examId}_Student_{studentId}.xlsx");
         }

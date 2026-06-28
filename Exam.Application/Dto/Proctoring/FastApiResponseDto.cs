@@ -22,6 +22,9 @@ namespace Exam.Application.Dto.Proctoring
         [JsonPropertyName("status")]
         public string Status { get; set; } = string.Empty;
 
+        [JsonPropertyName("timer_seconds")]
+        public double TimerSeconds { get; set; }
+
         [JsonPropertyName("violation")]
         public bool Violation { get; set; }
     }
@@ -111,6 +114,9 @@ namespace Exam.Application.Dto.Proctoring
 
         [JsonPropertyName("session")]
         public SessionDto Session { get; set; } = new();
+
+        [JsonPropertyName("events")]
+        public List<string>? Events { get; set; } = new();
 
         [JsonPropertyName("timestamp")]
         public string Timestamp { get; set; } = string.Empty;

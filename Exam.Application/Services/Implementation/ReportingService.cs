@@ -32,7 +32,7 @@ namespace Exam.Application.Services.Implementation
             return _mapper.Map<IEnumerable<ProctoringReportDto>>(orderedLogs);
         }
 
-        public async Task<string> GetStudentSessionReportTxtAsync(int examId, int studentId)
+        public async Task<string> GetStudentSessionReportTxtAsync(int examId, int studentId, string baseUrl = "https://localhost:7236")
         {
             var examStudent = (await _unitOfWork.Repository<ExamStudent>()
                 .FindAsync(es => es.ExamId == examId && es.StudentId == studentId, "Student")).FirstOrDefault();
@@ -70,7 +70,10 @@ namespace Exam.Application.Services.Implementation
             sb.AppendLine();
             foreach (var ev in report.Events)
             {
-                sb.AppendLine($"{ev.Second:F1}s".PadRight(14) + $"{ev.EventName}".PadRight(21) + $"{ev.DurationSeconds:F1}s");
+                var displayName = ev.EventName;
+                if (displayName == "Phone") displayName = "Phone Detected";
+                string durationStr = $"{ev.DurationSeconds:F1}s";
+                sb.AppendLine($"{ev.Second:F1}s".PadRight(14) + $"{displayName}".PadRight(21) + durationStr);
             }
             sb.AppendLine();
             sb.AppendLine("-------------------------------------------------------");
@@ -81,7 +84,7 @@ namespace Exam.Application.Services.Implementation
                 sb.AppendLine("Evidence Image Path:");
                 foreach (var path in evidenceImages)
                 {
-                    sb.AppendLine(path);
+                    sb.AppendLine($"{baseUrl.TrimEnd('/')}{path}");
                 }
             }
             sb.AppendLine();
@@ -112,14 +115,45 @@ namespace Exam.Application.Services.Implementation
 
         private SessionReportDto CreateSessionReport(ExamStudent es, List<ProctoringLog> logs)
         {
+            // ── 1. Determine a reliable SessionStart ───────────────────────────────
+            // We always derive SessionStart from the FIRST log timestamp.
+            // This avoids issues where es.StartDate uses a different clock or was
+            // never updated (e.g. DateTime.MinValue / stale row).
+            // If there are no logs at all, fall back to es.StartDate.
+            DateTime sessionStart;
+            DateTime sessionEnd;
+
+            if (logs.Any())
+            {
+                sessionStart = logs.First().Timestamp;
+                sessionEnd   = logs.Last().Timestamp;
+
+                // Sanity-check: if es.StartDate is close to the first log (within 5 min),
+                // prefer es.StartDate as it is set at the moment the student clicks "Start".
+                if (es.StartDate > DateTime.MinValue && Math.Abs((es.StartDate - sessionStart).TotalMinutes) < 5)
+                    sessionStart = es.StartDate;
+            }
+            else
+            {
+                sessionStart = es.StartDate;
+                sessionEnd   = es.EndDate ?? es.SubmissionDate ?? DateTime.UtcNow;
+            }
+
+            // Ensure sessionEnd >= sessionStart
+            if (sessionEnd < sessionStart) sessionEnd = sessionStart;
+
+            _logger.LogDebug(
+                "Report [{ExamId}/{StudentId}] SessionStart={Start:u}, SessionEnd={End:u}, LogCount={Count}",
+                es.ExamId, es.StudentId, sessionStart, sessionEnd, logs.Count);
+
             var report = new SessionReportDto
             {
-                SessionId = es.Id.ToString("x8"),
+                SessionId  = es.Id.ToString("x8"),
                 StudentName = es.Student?.FullName ?? "Unknown",
-                StudentId = es.StudentId,
-                ExamId = es.ExamId,
-                SessionStart = es.StartDate,
-                SessionEnd = es.EndDate ?? es.SubmissionDate ?? DateTime.UtcNow,
+                StudentId  = es.StudentId,
+                ExamId     = es.ExamId,
+                SessionStart = sessionStart,
+                SessionEnd   = sessionEnd,
                 Events = new List<SessionEventDto>()
             };
 
@@ -127,67 +161,115 @@ namespace Exam.Application.Services.Implementation
             if (report.TotalSessionTimeSeconds < 0) report.TotalSessionTimeSeconds = 0;
 
             var lastLog = logs.LastOrDefault();
-            // Determine if SuspiciousTime is incremental per log or cumulative in the last log.
-            // If any log (except the last) has a non‑zero SuspiciousTime, we assume incremental values.
-            // Otherwise we keep the latest cumulative value.
-            if (logs.Count > 1 && logs.Take(logs.Count - 1).Any(l => l.SuspiciousTime > 0))
-            {
-                report.SuspiciousTimeSeconds = logs.Sum(x => x.SuspiciousTime);
-            }
-            else
-            {
-                report.SuspiciousTimeSeconds = lastLog?.SuspiciousTime ?? 0;
-            }
-            report.TotalCheatScore = lastLog?.TotalScore ?? 0;
-            report.RiskLevel = lastLog?.RiskLevel ?? "LOW RISK";
+            report.SuspiciousTimeSeconds = lastLog?.SuspiciousTime ?? 0;
+
+            report.TotalCheatScore  = lastLog?.TotalScore ?? 0;
+            report.RiskLevel        = lastLog?.RiskLevel ?? "LOW RISK";
             report.CheatingDetected = logs.Any(l => l.Cheating);
 
-
+            // ── 2. Build event rows ────────────────────────────────────────────────
+            var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
             foreach (var log in logs.Where(l => l.Cheating))
             {
-                double duration = 2.0; // fallback if timer values are missing
+                // Clamp offset: must be 0 ≤ second ≤ totalSession
+                double offsetSeconds = (log.Timestamp - sessionStart).TotalSeconds;
+                offsetSeconds = Math.Max(0, Math.Min(offsetSeconds, report.TotalSessionTimeSeconds));
+
+                bool eventsArrayProcessed = false;
+
                 if (!string.IsNullOrEmpty(log.EventsJson))
                 {
-                    try
-                    {
-                        var responseDto = JsonSerializer.Deserialize<FastApiResponseDto>(log.EventsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                        if (responseDto != null)
-                        {
-                            if (log.CurrentEvent == "phone_detected" && responseDto.PhoneDetection != null)
-                                duration = responseDto.PhoneDetection.TimerSeconds;
-                            else if (log.CurrentEvent == "extra_person" && responseDto.PersonDetection != null)
-                                duration = responseDto.PersonDetection.TimerSeconds;
-                            else if (log.CurrentEvent == "no_face" && responseDto.FaceDetection != null)
-                                duration = responseDto.FaceDetection.TimerSeconds;
-                            else if (log.CurrentEvent == "gaze_violation" && responseDto.EyeTracking != null)
-                                duration = responseDto.EyeTracking.TimerSeconds;
-                        }
-                    }
+                    FastApiResponseDto? responseDto = null;
+                    try { responseDto = JsonSerializer.Deserialize<FastApiResponseDto>(log.EventsJson, jsonOptions); }
                     catch (Exception ex)
                     {
-                        // Log a warning with context information for debugging
-                        _logger.LogWarning(ex, "Failed to deserialize EventsJson for ExamId {ExamId}, StudentId {StudentId}, Timestamp {Timestamp}", log.ExamId, log.StudentId, log.Timestamp);
+                        _logger.LogWarning(ex,
+                            "Failed to deserialize EventsJson — StudentId={StudentId}, ExamId={ExamId}, Timestamp={Timestamp}",
+                            log.StudentId, log.ExamId, log.Timestamp);
+                    }
+
+                    if (responseDto?.Events != null && responseDto.Events.Any())
+                    {
+                        foreach (var evt in responseDto.Events)
+                        {
+                            double duration = ExtractDuration(evt, responseDto, log, sessionStart, logs);
+                            report.Events.Add(new SessionEventDto
+                            {
+                                Second            = offsetSeconds,
+                                EventName         = FormatEventName(evt),
+                                DurationSeconds   = duration,
+                                EvidenceImagePath = log.EvidenceImagePath,
+                                CheatScore        = log.TotalScore,
+                                RiskLevel         = log.RiskLevel,
+                                Timestamp         = log.Timestamp
+                            });
+                        }
+                        eventsArrayProcessed = true;
                     }
                 }
 
-                // deltaScore is no longer used; removed for clarity.
-                // If needed in the future, it can be added back to SessionEventDto and exported to Excel.
-
-                report.Events.Add(new SessionEventDto
+                if (!eventsArrayProcessed)
                 {
-                    Second = (log.Timestamp - report.SessionStart).TotalSeconds,
-                    EventName = FormatEventName(log.CurrentEvent),
-                    DurationSeconds = duration,
-                    EvidenceImagePath = log.EvidenceImagePath,
-                    CheatScore = log.TotalScore,
-                    RiskLevel = log.RiskLevel
-                });
+                    FastApiResponseDto? responseDto = null;
+                    if (!string.IsNullOrEmpty(log.EventsJson))
+                    {
+                        try { responseDto = JsonSerializer.Deserialize<FastApiResponseDto>(log.EventsJson, jsonOptions); }
+                        catch { /* already logged */ }
+                    }
 
-
+                    double duration = ExtractDuration(log.CurrentEvent, responseDto, log, sessionStart, logs);
+                    report.Events.Add(new SessionEventDto
+                    {
+                        Second            = offsetSeconds,
+                        EventName         = FormatEventName(log.CurrentEvent),
+                        DurationSeconds   = duration,
+                        EvidenceImagePath = log.EvidenceImagePath,
+                        CheatScore        = log.TotalScore,
+                        RiskLevel         = log.RiskLevel,
+                        Timestamp         = log.Timestamp
+                    });
+                }
             }
 
             return report;
+        }
+
+        /// <summary>
+        /// Extracts the real duration for a given event type from the FastApiResponseDto timers.
+        /// For phone_detected with a 0.0 timer (instant confirmation), returns -1 as a sentinel
+        /// so the report layer can display "Instant" instead of "0.0s".
+        /// Falls back to inter-log delta when no timer value is available.
+        /// </summary>
+        private double ExtractDuration(
+            string? evt,
+            FastApiResponseDto? dto,
+            ProctoringLog log,
+            DateTime sessionStart,
+            List<ProctoringLog> allLogs)
+        {
+            if (string.IsNullOrEmpty(evt)) return 0.0;
+
+            double timer = evt switch
+            {
+                "phone_detected"  => dto?.PhoneDetection?.TimerSeconds  ?? -1,
+                "extra_person"    => dto?.PersonDetection?.TimerSeconds  ?? -1,
+                "no_face"         => dto?.FaceDetection?.TimerSeconds    ?? -1,
+                "gaze_violation"  => dto?.EyeTracking?.TimerSeconds      ?? -1,
+                "head_violation"  => dto?.HeadPose?.TimerSeconds         ?? -1,
+                _                 => -1
+            };
+
+            // If a valid positive timer was found, use it.
+            if (timer > 0) return timer;
+
+            // Fallback: If no valid timer was found, return 0.0 (or -1 for instant).
+            // Do not use the time elapsed since the session start as the event's duration!
+            _logger.LogWarning(
+                "Duration fallback used — StudentId={StudentId}, ExamId={ExamId}, Event={Event}, Timestamp={Timestamp}, Fallback set to 0.0s",
+                log.StudentId, log.ExamId, evt, log.Timestamp);
+                
+            return 0.0;
         }
 
         private string FormatEventName(string? evt)
@@ -204,14 +286,22 @@ namespace Exam.Application.Services.Implementation
             };
         }
 
-        public async Task<byte[]> GetReportsExcelByExamIdAsync(int examId)
+        public async Task<byte[]> GetReportsExcelByExamIdAsync(int examId, string baseUrl = "https://localhost:7236")
         {
             var sessions = (await GetSessionReportsByExamIdAsync(examId)).ToList();
 
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Exam Report");
 
-            var currentRow = 1;
+            // Consolidated Report Summary Info
+            worksheet.Cell(1, 1).Value = "Exam ID";
+            worksheet.Cell(1, 2).Value = examId;
+            worksheet.Cell(2, 1).Value = "Total Students";
+            worksheet.Cell(2, 2).Value = sessions.Count;
+            worksheet.Cell(3, 1).Value = "Total Students With Violations";
+            worksheet.Cell(3, 2).Value = sessions.Count(s => s.CheatingDetected);
+
+            var currentRow = 6;
 
             // Data Header
             worksheet.Cell(currentRow, 1).Value = "Student Name";
@@ -240,14 +330,15 @@ namespace Exam.Application.Services.Implementation
                         worksheet.Cell(currentRow, 2).Value = session.StudentId;
                         worksheet.Cell(currentRow, 3).Value = session.ExamId;
                         worksheet.Cell(currentRow, 4).Value = ev.EventName;
-                        worksheet.Cell(currentRow, 5).Value = $"{ev.DurationSeconds:F1}s";
+                        string durationStr = $"{ev.DurationSeconds:F1}s";
+                        worksheet.Cell(currentRow, 5).Value = durationStr;
                         worksheet.Cell(currentRow, 6).Value = ev.CheatScore;
                         worksheet.Cell(currentRow, 7).Value = ev.RiskLevel;
-                        worksheet.Cell(currentRow, 8).Value = $"{ev.Second:F1}s";
+                        worksheet.Cell(currentRow, 8).Value = ev.Timestamp.ToString("yyyy-MM-dd HH:mm:ss");
                         if (!string.IsNullOrEmpty(ev.EvidenceImagePath))
                         {
-                            var imageUrl = $"https://localhost:7236{ev.EvidenceImagePath}";
-                            worksheet.Cell(currentRow, 9).Value = "Open Evidence";
+                            var imageUrl = $"{baseUrl.TrimEnd('/')}{ev.EvidenceImagePath}";
+                            worksheet.Cell(currentRow, 9).Value = ev.EvidenceImagePath;
                             worksheet.Cell(currentRow, 9).SetHyperlink(new XLHyperlink(imageUrl));
                         }
                         else
@@ -273,7 +364,7 @@ namespace Exam.Application.Services.Implementation
             return stream.ToArray();
         }
 
-        public async Task<byte[]> GetStudentSessionReportExcelAsync(int examId, int studentId)
+        public async Task<byte[]> GetStudentSessionReportExcelAsync(int examId, int studentId, string baseUrl = "https://localhost:7236")
         {
             var sessions = (await GetSessionReportsByExamIdAsync(examId)).Where(s => s.StudentId == studentId).ToList();
 
@@ -310,14 +401,15 @@ namespace Exam.Application.Services.Implementation
                         worksheet.Cell(currentRow, 2).Value = session.StudentId;
                         worksheet.Cell(currentRow, 3).Value = session.ExamId;
                         worksheet.Cell(currentRow, 4).Value = ev.EventName;
-                        worksheet.Cell(currentRow, 5).Value = $"{ev.DurationSeconds:F1}s";
+                        string durationStr = $"{ev.DurationSeconds:F1}s";
+                        worksheet.Cell(currentRow, 5).Value = durationStr;
                         worksheet.Cell(currentRow, 6).Value = ev.CheatScore;
                         worksheet.Cell(currentRow, 7).Value = ev.RiskLevel;
-                        worksheet.Cell(currentRow, 8).Value = $"{ev.Second:F1}s";
+                        worksheet.Cell(currentRow, 8).Value = ev.Timestamp.ToString("yyyy-MM-dd HH:mm:ss");
                         if (!string.IsNullOrEmpty(ev.EvidenceImagePath))
                         {
-                            var imageUrl = $"https://localhost:7236{ev.EvidenceImagePath}";
-                            worksheet.Cell(currentRow, 9).Value = "Open Evidence";
+                            var imageUrl = $"{baseUrl.TrimEnd('/')}{ev.EvidenceImagePath}";
+                            worksheet.Cell(currentRow, 9).Value = ev.EvidenceImagePath;
                             worksheet.Cell(currentRow, 9).SetHyperlink(new XLHyperlink(imageUrl));
                         }
                         else

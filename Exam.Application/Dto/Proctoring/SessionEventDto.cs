@@ -8,5 +8,6 @@ namespace Exam.Application.Dto.Proctoring
         public string? EvidenceImagePath { get; set; }
         public double CheatScore { get; set; }
         public string? RiskLevel { get; set; }
+        public DateTime Timestamp { get; set; }
     }
 }

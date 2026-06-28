@@ -27,6 +27,8 @@ namespace Exam.Infrastructure.Data
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<ProctoringLog> ProctoringLogs { get; set; }
         public DbSet<ExamProctoringSummary> ExamProctoringSummaries { get; set; }
+        public DbSet<Lecture> Lectures { get; set; }
+        public DbSet<LectureAttachment> LectureAttachments { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -49,6 +51,8 @@ namespace Exam.Infrastructure.Data
             builder.Entity<RefreshToken>().HasQueryFilter(rt => !rt.IsDeleted);
             builder.Entity<ProctoringLog>().HasQueryFilter(pl => !pl.IsDeleted);
             builder.Entity<ExamProctoringSummary>().HasQueryFilter(eps => !eps.IsDeleted);
+            builder.Entity<Lecture>().HasQueryFilter(l => !l.IsDeleted);
+            builder.Entity<LectureAttachment>().HasQueryFilter(la => !la.IsDeleted);
 
 
             // ===================== Indexes =====================

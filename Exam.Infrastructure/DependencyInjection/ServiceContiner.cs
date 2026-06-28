@@ -84,6 +84,7 @@ namespace Exam.Infrastructure.DependencyInjection
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<IFileStorageService, LocalFileStorageService>();
             services.AddMemoryCache();
 
             // ===================== AI Proctoring Gateway =====================

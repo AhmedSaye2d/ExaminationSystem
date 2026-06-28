@@ -1,4 +1,4 @@
-﻿using Exam.Domain.Entities.Common;
+using Exam.Domain.Entities.Common;
 
 namespace Exam.Domain.Entities
 {
@@ -29,6 +29,9 @@ namespace Exam.Domain.Entities
 
         // Exams in this course
         public HashSet<Exam> Exams { get; set; } = new();
+
+        // Lectures in this course
+        public List<Lecture> Lectures { get; set; } = new();
     }
 
 }

@@ -104,48 +104,55 @@ namespace Exam.Infrastructure.Services
             }
         }
 
+        /// <summary>
+        /// Determines whether a proctoring log should be saved.
+        /// FastAPI is the sole authority for cheating decisions — this method never modifies apiResponse.
+        /// </summary>
         private bool ShouldSaveLog(int studentId, int examId, FastApiResponseDto apiResponse)
         {
             if (apiResponse == null) return false;
 
             var confirmedViolations = new[] { "phone_detected", "extra_person", "no_face", "head_violation", "gaze_violation" };
 
-            if (apiResponse.Cheating && apiResponse.CurrentEvent != null && confirmedViolations.Contains(apiResponse.CurrentEvent))
+            // Clear cache for violations that are no longer active
+            var activeEvents = apiResponse.Events ?? new List<string>();
+            if (!string.IsNullOrEmpty(apiResponse.CurrentEvent) && !activeEvents.Contains(apiResponse.CurrentEvent))
             {
-                double timer = 0;
-                switch (apiResponse.CurrentEvent)
+                activeEvents.Add(apiResponse.CurrentEvent);
+            }
+
+            foreach (var violation in confirmedViolations)
+            {
+                if (!apiResponse.Cheating || !activeEvents.Contains(violation))
                 {
-                    case "phone_detected": timer = apiResponse.PhoneDetection?.TimerSeconds ?? 0; break;
-                    case "extra_person": timer = apiResponse.PersonDetection?.TimerSeconds ?? 0; break;
-                    case "no_face": timer = apiResponse.FaceDetection?.TimerSeconds ?? 0; break;
-                    case "gaze_violation": timer = apiResponse.EyeTracking?.TimerSeconds ?? 0; break;
-                }
-
-                bool isLowRisk = string.Equals(apiResponse.Session?.RiskLevel, "LOW", StringComparison.OrdinalIgnoreCase) ||
-                                 string.Equals(apiResponse.Session?.RiskLevel, "LOW RISK", StringComparison.OrdinalIgnoreCase);
-
-                bool isValidViolation = timer >= 2.0 || 
-                                        (apiResponse.Session?.TotalScore > 0) || 
-                                        !isLowRisk;
-
-                if (!isValidViolation)
-                {
-                    return false;
-                }
-
-                string eventCacheKey = $"event_{studentId}_{examId}_{apiResponse.CurrentEvent}";
-                if (!_cache.TryGetValue(eventCacheKey, out _))
-                {
-                    _cache.Set(eventCacheKey, true, TimeSpan.FromSeconds(10));
-                    return true;
+                    var cacheKeyToClear = $"event_{studentId}_{examId}_{violation}";
+                    _cache.Remove(cacheKeyToClear);
                 }
             }
 
-            return false;
+            // Only persist logs when FastAPI explicitly flags a cheating event.
+            if (!apiResponse.Cheating || string.IsNullOrEmpty(apiResponse.CurrentEvent))
+                return false;
+
+            if (!confirmedViolations.Contains(apiResponse.CurrentEvent))
+                return false;
+
+            // Throttle: deduplicate the same event within a 10-second window.
+            var cacheKey = $"event_{studentId}_{examId}_{apiResponse.CurrentEvent}";
+            if (_cache.TryGetValue(cacheKey, out _))
+                return false;
+
+            _cache.Set(cacheKey, true, TimeSpan.FromSeconds(10));
+            return true;
         }
 
+        /// <summary>
+        /// Persists the proctoring log using exactly the values returned by FastAPI.
+        /// ASP.NET Core never alters cheating decisions, scores, or risk levels.
+        /// </summary>
         private async Task SaveProctoringLogAsync(ProctoringFrameRequest request, FastApiResponseDto apiResponse)
         {
+            // --- Evidence image ---
             string? evidencePath = null;
             try
             {
@@ -156,56 +163,54 @@ namespace Exam.Infrastructure.Services
                 var absoluteDir = Path.Combine(Directory.GetCurrentDirectory(), relativeDir);
 
                 if (!Directory.Exists(absoluteDir))
-                {
                     Directory.CreateDirectory(absoluteDir);
-                }
 
                 var absoluteFilePath = Path.Combine(absoluteDir, fileName);
 
                 using (var fileStream = new FileStream(absoluteFilePath, FileMode.Create))
+                using (var frameStream = request.Frame.OpenReadStream())
                 {
-                    using (var frameStream = request.Frame.OpenReadStream())
-                    {
-                        if (frameStream.CanSeek) frameStream.Position = 0;
-                        await frameStream.CopyToAsync(fileStream);
-                    }
+                    if (frameStream.CanSeek) frameStream.Position = 0;
+                    await frameStream.CopyToAsync(fileStream);
                 }
 
-                // Store a relative path that can be served via static files
+                // Relative path served via static files middleware.
                 evidencePath = $"/evidence/exam_{request.ExamId}/student_{request.StudentId}/{fileName}";
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to save evidence image for student {StudentId}", request.StudentId);
+                _logger.LogError(ex, "Failed to save evidence image for Student {StudentId}", request.StudentId);
             }
 
+            // --- Persist exactly what FastAPI returned — no overrides ---
             var log = new ProctoringLog
             {
-                StudentId = request.StudentId,
-                ExamId = request.ExamId,
-                CurrentEvent = apiResponse.CurrentEvent,
-                EventsJson = JsonSerializer.Serialize(apiResponse),
-                RiskLevel = apiResponse.Session?.RiskLevel ?? "Unknown",
-                TotalScore = apiResponse.Session?.TotalScore ?? 0,
-                SuspiciousTime = apiResponse.Session?.SuspiciousTime ?? 0,
-                Cheating = apiResponse.Cheating,
-                Timestamp = DateTime.UtcNow,
+                StudentId       = request.StudentId,
+                ExamId          = request.ExamId,
+                Cheating        = apiResponse.Cheating,
+                CurrentEvent    = apiResponse.CurrentEvent,
+                RiskLevel       = apiResponse.Session?.RiskLevel ?? "Unknown",
+                TotalScore      = apiResponse.Session?.TotalScore ?? 0,
+                SuspiciousTime  = apiResponse.Session?.SuspiciousTime ?? 0,
+                EventsJson      = JsonSerializer.Serialize(apiResponse),
+                Timestamp       = DateTime.UtcNow,
                 EvidenceImagePath = evidencePath,
 
-                // New Granular Data
-                PhoneDetected = apiResponse.PhoneDetection?.Detected ?? false,
+                // Granular sensor data (read-only mirror of FastAPI output)
+                PhoneDetected   = apiResponse.PhoneDetection?.Detected ?? false,
                 PhoneConfidence = apiResponse.PhoneDetection?.Confidence ?? 0,
-                PersonCount = apiResponse.PersonDetection?.PersonCount ?? 0,
-                EyeStatus = apiResponse.EyeTracking?.Status,
-                HeadStatus = apiResponse.HeadPose?.Status,
-                FacePresent = apiResponse.FaceDetection?.FacePresent ?? false
+                PersonCount     = apiResponse.PersonDetection?.PersonCount ?? 0,
+                EyeStatus       = apiResponse.EyeTracking?.Status,
+                HeadStatus      = apiResponse.HeadPose?.Status,
+                FacePresent     = apiResponse.FaceDetection?.FacePresent ?? false
             };
 
             await _unitOfWork.Repository<ProctoringLog>().AddAsync(log);
             await _unitOfWork.CompleteAsync();
 
-            _logger.LogDebug("Saved granular proctoring log for Student {StudentId}, Exam {ExamId}. Event: {Event}, Risk: {Risk}",
-                request.StudentId, request.ExamId, log.CurrentEvent, log.RiskLevel);
+            _logger.LogDebug(
+                "Proctoring log saved — Student {StudentId}, Exam {ExamId}, Event: {Event}, Cheating: {Cheating}, Risk: {Risk}",
+                request.StudentId, request.ExamId, log.CurrentEvent, log.Cheating, log.RiskLevel);
         }
 
         public async Task<object> ProcessVideoAsync(ProctoringVideoRequest request, CancellationToken cancellationToken)

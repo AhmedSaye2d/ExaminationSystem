@@ -63,10 +63,18 @@ namespace Exam.Application.Services.Implementation
             }
             else
             {
-                var maxAttempts = exam.Settings?.MaxAttempts ?? 1;
-                if (maxAttempts > 0 && existingSessions.Count >= maxAttempts)
+                // var maxAttempts = exam.Settings?.MaxAttempts ?? 1;
+                // if (maxAttempts > 0 && existingSessions.Count >= maxAttempts)
+                // {
+                //     throw new ArgumentException($"You have reached the maximum number of attempts ({maxAttempts}) for this exam.");
+                // }
+
+                var proctoringLogRepo = _unitOfWork.Repository<ProctoringLog>();
+                var oldLogs = await proctoringLogRepo.FindAsync(l => l.ExamId == examId && l.StudentId == studentId && !l.IsDeleted);
+                foreach (var log in oldLogs)
                 {
-                    throw new ArgumentException($"You have reached the maximum number of attempts ({maxAttempts}) for this exam.");
+                    log.IsDeleted = true;
+                    await proctoringLogRepo.UpdateAsync(log);
                 }
 
                 examStudent = new ExamStudent

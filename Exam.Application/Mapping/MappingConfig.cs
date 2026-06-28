@@ -11,6 +11,7 @@ using Exam.Application.Dto.SubmitExam;
 using Exam.Domain.Entities;
 using Exam.Domain.Entities.Identity;
 using ExamDTOs = Exam.Application.Dto.Exam;
+using Exam.Application.Dto.Lecture;
 
 namespace Exam.Application.Mapping
 {
@@ -188,6 +189,14 @@ namespace Exam.Application.Mapping
             // =======================
             CreateMap<ProctoringLog, ProctoringReportDto>()
                 .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student != null ? src.Student.FullName : "Unknown"));
+
+            // =======================
+            // Lecture Mappings
+            // =======================
+            CreateMap<Lecture, LectureDTO>();
+            CreateMap<Lecture, LectureDetailDTO>()
+                .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.Attachments));
+            CreateMap<LectureAttachment, LectureAttachmentDTO>();
         }
     }
 }

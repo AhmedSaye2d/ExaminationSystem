@@ -52,8 +52,9 @@ namespace Exam.Tests
 
             var unitOfWork = new UnitOfWork(dbContext);
             var mapperMock = new Mock<IMapper>();
+            var loggerMock = new Mock<Microsoft.Extensions.Logging.ILogger<ReportingService>>();
             
-            var reportingService = new ReportingService(unitOfWork, mapperMock.Object);
+            var reportingService = new ReportingService(unitOfWork, mapperMock.Object, loggerMock.Object);
 
             var excelBytes = await reportingService.GetReportsExcelByExamIdAsync(1);
 
